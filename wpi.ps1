@@ -63,12 +63,12 @@ $PKGS = @(
 
 function Exit-Script {
     Clear-TempFiles   
-    DS_WriteLog -InformationType "I" -Text "Reiniciando para aplicar alterações..." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "Restarting to apply changes..." -LogFile $LogFile
     try {
         Restart-Computer -Confirm
     }
     catch {
-        DS_WriteLog -InformationType "W" -Text "Falha ao reiniciar o sistema. Favor reiniciar manualmente." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "Failed to restart the system. Please restart manually." -LogFile $LogFile
     }
     exit 0
 }    
@@ -161,57 +161,57 @@ function Clear-TempFiles {
     $tempPath = $env:TEMP
 
     try {
-        DS_WriteLog -InformationType "I" -Text "Limpando todos os arquivos em $tempPath..." -LogFile $LogFile
+        DS_WriteLog -InformationType "I" -Text "Clean all files on $tempPath..." -LogFile $LogFile
 
         $tempFiles = Get-ChildItem -Path $tempPath -Recurse
 
         foreach ($file in $tempFiles) {
             try {
                 DS_CleanupDirectory -Directory $file.FullName
-                DS_WriteLog -InformationType "S" -Text "Removido: $($file.FullName)" -LogFile $LogFile
+                DS_WriteLog -InformationType "S" -Text "Removed: $($file.FullName)" -LogFile $LogFile
             }
             catch {
-                DS_WriteLog -InformationType "W" -Text "Falha ao remover: $($file.FullName). Motivo: $_" -LogFile $LogFile
+                DS_WriteLog -InformationType "W" -Text "Failed to remove: $($file.FullName). Reason: $_" -LogFile $LogFile
             }
         }
-        DS_WriteLog -InformationType "S" -Text "Limpeza concluída." -LogFile $LogFile
+        DS_WriteLog -InformationType "S" -Text "Cleaning completed." -LogFile $LogFile
     }
     catch {
-        DS_WriteLog -InformationType "E" -Text "Ocorreu um erro ao tentar limpar a pasta TEMP: $_" -LogFile $LogFile
+        DS_WriteLog -InformationType "E" -Text "An error occurred when trying to clear the TEMP folder: $_" -LogFile $LogFile
     }
 }
 
 function Set-Ensure-Admin {
     if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-        DS_WriteLog -InformationType "E" -Text "Este script deve ser executado como Administrador!" -LogFile $LogFile
+        DS_WriteLog -InformationType "E" -Text "This script must be run as Administrator!" -LogFile $LogFile
     }
 }
 
 function Set-Ensure-InternetConnection {
-    DS_WriteLog -InformationType "I" -Text "Verificando conexão com a internet..." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "Checking internet connection..." -LogFile $LogFile
     Test-Connection 8.8.8.8 -Count 1 -ErrorAction SilentlyContinue | Out-Null
     
     if (-not $?) {
-        DS_WriteLog -InformationType "E" -Text "O computador precisa estar conectado à internet para executar este script!" -LogFile $LogFile
+        DS_WriteLog -InformationType "E" -Text "The computer needs to be connected to the internet to run this script!" -LogFile $LogFile
     }
 }
 
 function Set-Ensure-OSCompatibility {
-    DS_WriteLog -InformationType "I" -Text "Verificando compatibilidade do sistema..." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "Checking system compatibility..." -LogFile $LogFile
     $OS_name = Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty Caption
     
     if (-not $OS_name) {
-        DS_WriteLog -InformationType "E" -Text "Versão do Windows desconhecida ou não suportada!" -LogFile $LogFile
+        DS_WriteLog -InformationType "E" -Text "Unknown or unsupported Windows version!" -LogFile $LogFile
     } 
     else {
-        DS_WriteLog -InformationType "I" -Text "Sistema operacional identificado: $OS_name" -LogFile $LogFile
+        DS_WriteLog -InformationType "I" -Text "Operating system identified: $OS_name" -LogFile $LogFile
         $OS_version = ($OS_name -split ' ')[2]
     
         if ($OS_version -lt 10) {
-            DS_WriteLog -InformationType "I" -Text"Versão do Windows desconhecida ou não suportada!"
+            DS_WriteLog -InformationType "I" -Text "Unknown or unsupported Windows version!" -LogFile $LogFile
         } 
         else {
-            DS_WriteLog -InformationType "I" -Text"Versão do sistema operacional: $OS_version" -LogFile $LogFile
+            DS_WriteLog -InformationType "I" -Text "Operating system version: $OS_version" -LogFile $LogFile
         }
     }
 }
@@ -220,12 +220,12 @@ function Set-Wallpaper {
     $wallpaperUrl = "https://images.pexels.com/photos/20775596/pexels-photo-20775596/free-photo-of-mar-panorama-vista-paisagem.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE -ChildPath $wallpaperFileName
-    DS_WriteLog -InformationType "I" -Text "Aplicando novo wallpaper..." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "Applying new wallpaper..." -LogFile $LogFile
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "JPEGImportQuality" -Value 100 -Type DWORD -Force
     DownloadFileBitsTransfer -SourceUri $wallpaperUrl -DestinationPath $wallpaperPath
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $wallpaperPath -Type String -Force
     Invoke-Expression -Command 'rundll32.exe user32.dll, UpdatePerUserSystemParameters 1, True'
-    DS_WriteLog -InformationType "I" -Text "Personalizações aplicadas. O Windows Explorer será reiniciado." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "Customizations applied. Windows Explorer will restart." -LogFile $LogFile
     Stop-Process -Name explorer -Force ; Start-Process explorer    
 }
 function Set-ConfigSystem {
@@ -245,13 +245,13 @@ function Install-WingetDependency {
     
     try {
         if (-not (Test-Path $PackagePath)) {
-            DS_WriteLog -InformationType "I" -Text "Fazendo o download de $PackageName..." -LogFile $LogFile
+            DS_WriteLog -InformationType "I" -Text "Downloading $PackageName..." -LogFile $LogFile
             DownloadFileBitsTransfer -SourceUri $URL -DestinationPath $PackagePath
         }
         Add-AppxPackage -Path $PackagePath -ErrorAction Stop | Out-Null
     }
     catch {
-        DS_WriteLog -InformationType "E" -Text "Erro ao baixar ou instalar $PackageName" -LogFile $LogFile
+        DS_WriteLog -InformationType "E" -Text "Error downloading or installing $PackageName" -LogFile $LogFile
     }
 }
 function Install-Winget {
@@ -263,10 +263,10 @@ function Install-Winget {
             Install-WingetDependency "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
             Install-WingetDependency "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"    
             winget list --accept-source-agreements -ErrorAction Stop | Out-Null
-            DS_WriteLog -InformationType "S" -Text "Winget foi devidamente atualizado e está pronto para o uso." -LogFile $LogFile
+            DS_WriteLog -InformationType "S" -Text "Winget has been properly updated and is ready to use." -LogFile $LogFile
         }
         else {
-            DS_WriteLog -InformationType "I" -Text "Winget já está instalado." -LogFile $LogFile
+            DS_WriteLog -InformationType "I" -Text "Winget are installed." -LogFile $LogFile
         }
     }
     catch {
@@ -278,30 +278,30 @@ function Install-Winget {
 # ------------ INSTALAÇÃO DOS PACOTES ------------ #
 
 function Install-WingetPackages {
-    DS_WriteLog -InformationType "I" -Text "Iniciando a instalação de pacotes do Winget..." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "Starting Winget package installation..." -LogFile $LogFile
 
     $count = 0
 
     foreach ($pkg in $PKGS) {
         $installed = Invoke-Expression -Command "winget list $pkg --accept-source-agreements"
         if ($installed -match ([regex]::Escape($pkg))) {
-            DS_WriteLog -InformationType "W" -Text "$pkg já está instalado." -LogFile $LogFile
+            DS_WriteLog -InformationType "W" -Text "$pkg are installed." -LogFile $LogFile
         }
         else {
-            DS_WriteLog -InformationType "I" -Text "Instalando $pkg ..." -LogFile $LogFile
+            DS_WriteLog -InformationType "I" -Text "Installing $pkg ..." -LogFile $LogFile
             Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements --no-upgrade -h" -ErrorAction SilentlyContinue
             
             if ($?) {
-                DS_WriteLog -InformationType "S" -Text "O pacote $pkg foi instalado com sucesso!" -LogFile $LogFile
+                DS_WriteLog -InformationType "S" -Text "The package $pkg are installed!" -LogFile $LogFile
                 $count++
             }
             else {
-                DS_WriteLog -InformationType "W" -Text "Falha ao tentar instalar o pacote $pkg." -LogFile $LogFile              
+                DS_WriteLog -InformationType "W" -Text "Failed to install the package $pkg." -LogFile $LogFile              
             }
         }
     }
 
-    DS_WriteLog -InformationType "S" -Text "Fim da instalação de pacotes." -LogFile $LogFile
+    DS_WriteLog -InformationType "S" -Text "Packages Installed with Successfully" -LogFile $LogFile
     DS_WriteLog -InformationType "S" -Text "$count de $($PKGS.Count) pacotes foram instalados com sucesso." -LogFile $LogFile
 }
 
@@ -331,12 +331,12 @@ function Add-ExtrasPackages {
     $inviskaPath = Join-Path -Path $TempDir -ChildPath $inviska
     $qBitTorrentPath = Join-Path -Path $TempDir -ChildPath $qBitTorrent
 
-    DS_WriteLog -InformationType "I" -Text  "Iniciando a instalação de extras..." -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text  "Installing Extras Packages" -LogFile $LogFile
     
     if (-not(Test-Path "C:\ShanaEncoder")) {        
         DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
-        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath
-        Start-Process -FilePath $shanaPath\$shana -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null
+        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath        
+        DS_InstallOrUninstallSoftware -File $shanaPath -Installationtype "Install" -Arguments ""
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
@@ -352,7 +352,7 @@ function Add-ExtrasPackages {
             $fileName = [System.IO.Path]::GetFileName($url)
             $filePath = Join-Path $TempDir $fileName
             DownloadFileBitsTransfer -SourceUri $url -DestinationPath $filePath
-            DS_WriteLog -InformationType "I" -Text "Arquivos salvos em: $filePath" -LogFile $LogFile     
+            DS_WriteLog -InformationType "I" -Text "Files Saved on: $filePath" -LogFile $LogFile     
         }
               
         if (Test-Path -Path $presets) {        
@@ -375,7 +375,7 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" -Force        
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "Shana Encoder já está instalado." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "Shana Encoder are installed." -LogFile $LogFile
     }
 
     if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
@@ -384,38 +384,38 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "Arquivo já existe." -LogFile $LogFile        
+        DS_WriteLog -InformationType "W" -Text "File Already Exists." -LogFile $LogFile        
     }
 
     if (-not(Test-Path "C:\Program Files (x86)\CnPack")) {
-        DS_WriteLog -InformationType "I" -Text  "Instalando CNPACK Wizard" -LogFile $LogFile
+        DS_WriteLog -InformationType "I" -Text  "Installing CNPACK Wizard" -LogFile $LogFile
         DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath      
         DS_InstallOrUninstallSoftware -File $cnPackPath -Installationtype "Install" -Arguments ""
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "CnPack já está instalado." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "CnPack are installed." -LogFile $LogFile
     }  
 
     if (-not(Test-Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
-        DS_WriteLog -InformationType "I" -Text  "Instalando qBitTorrent"
+        DS_WriteLog -InformationType "I" -Text  "Installing qBitTorrent" -LogFile $LogFile
         DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath     
         DS_InstallOrUninstallSoftware -File $qBitTorrentPath -Installationtype "Install" -Arguments "/S"
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "qBitTorrent já está instalado." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "qBitTorrent are installed." -LogFile $LogFile
     }
     
     if (-not(Test-Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
-        DS_WriteLog -InformationType "I" -Text "Instalando Inviska MKV Extract" -LogFile $LogFile
+        DS_WriteLog -InformationType "I" -Text "Installing Inviska MKV Extract" -LogFile $LogFile
         DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
-        DS_InstallOrUninstallSoftware $inviskaPath -Installationtype "Install" -Arguments "" 
+        DS_InstallOrUninstallSoftware -File $inviskaPath -Installationtype "Install" -Arguments "" 
     }
 
-    DS_WriteLog -InformationType "I" -Text "Dowload QuickLook Plugins" -LogFile $LogFile
+    DS_WriteLog -InformationType "I" -Text "DowNloading QuickLook Plugins" -LogFile $LogFile
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"   
-    DS_WriteLog -InformationType "S" -Text "Fim da instalação de pacotes." -LogFile $LogFile
+    DS_WriteLog -InformationType "S" -Text "Packages Installed with Successfully" -LogFile $LogFile
 }
 
 function Set-BitTorrentFolders {
@@ -429,7 +429,7 @@ function Set-BitTorrentFolders {
         }
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "Pastas já existem." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "Folders Already Exists." -LogFile $LogFile
     }
 }
 function Set-IDMFolders {
@@ -443,7 +443,7 @@ function Set-IDMFolders {
         }
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "Pastas já existem." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "Folders Already Exists." -LogFile $LogFile
     }
 }
 
@@ -458,7 +458,7 @@ function Set-WinRARFolders {
         }
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "Pastas já existem." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "Folders Already Exists." -LogFile $LogFile
     }
 }
 
@@ -473,7 +473,7 @@ function Set-TelegramFolders {
         DS_CreateDirectory -Directory $telegramDir 
     }
     else {
-        DS_WriteLog -InformationType "W" -Text "Pastas já existem." -LogFile $LogFile
+        DS_WriteLog -InformationType "W" -Text "Folders Already Exists." -LogFile $LogFile
     }
 }
 
