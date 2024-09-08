@@ -92,18 +92,15 @@ function Exit-Error {
 
 function Exit-Script {
     Clear-TempFiles   
-    Write-Yellow "Fim do script! `nReiniciar o sistema para aplicar alterações? (s = sim | n = não)" ; $i = Read-Host
-    if ($i -ceq 's') {
-        Write-Yellow "Reiniciando agora..."
-        try {
-            Restart-Computer -Force
-        }
-        catch {
-            Write-Yellow "Falha ao reiniciar o sistema. Favor reiniciar manualmente."
-        }
-    }    
+    Write-Yellow "Reiniciando para aplicar alterações..."   
+    try {
+        Restart-Computer -Confirm
+    }
+    catch {
+        Write-Yellow "Falha ao reiniciar o sistema. Favor reiniciar manualmente."
+    }
     exit 0
-}
+}    
 
 # ------------ FUNÇÕES AUXILIARES ------------ #
 
@@ -206,7 +203,6 @@ function Clear-TempFiles {
                 Write-Warning "Falha ao remover: $($file.FullName). Motivo: $_"
             }
         }
-
         Write-Green "Limpeza concluída."
     }
     catch {
@@ -264,11 +260,7 @@ function Set-Wallpaper {
 function Set-ConfigSystem {
     Set-Ensure-Admin
     Set-Ensure-InternetConnection
-    Set-Ensure-OSCompatibility
-
-    <#if (-not (Test-Path $TempDir)) {
-        New-Item -ItemType Directory -Path $TempDir | Out-Null 
-    }#>
+    Set-Ensure-OSCompatibility  
 }
 
 # ------------ INSTALAÇÃO DO WINGET ------------ #
@@ -353,6 +345,7 @@ function Add-ExtrasPackages {
     $codecUrl = "https://file.shana.pe.kr/lib/CodecLibrary.v1.2.x64.7z"
     $regUrl = "https://gist.githubusercontent.com/MuhammadSaim/de84d1ca59952cf1efaa8c061aab81a1/raw/ca31cbda01412e85949810d52d03573af281f826/rarreg.key"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.6/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
     $presets = "C:\ShanaEncoder\presets"
     $settings = "C:\ShanaEncoder\settings" 
 
@@ -378,15 +371,13 @@ function Add-ExtrasPackages {
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/shanaapp.xml"
         )
         
-        $cleanUrls = $xml | ForEach-Object { [uri]::UnescapeDataString($_) }        
-        $downloadDir = "$env:TEMP"
-        $TempDir = "$env:TEMP"
+        $cleanUrls = $xml | ForEach-Object { [uri]::UnescapeDataString($_) }              
         
         foreach ($url in $cleanUrls) {   
             $fileName = [System.IO.Path]::GetFileName($url)
-            $filePath = Join-Path $downloadDir $fileName
-            Invoke-WebRequest -Uri $url -OutFile $filePath
-            Write-Host "Arquivo salvo em: $filePath"        
+            $filePath = Join-Path $TempDir $fileName
+            DownloadFileBitsTransfer -SourceUri $url -DestinationPath $filePath
+            Write-Host "Arquivos salvos em: $filePath"        
         }
               
         if (Test-Path $presets) {        
@@ -424,10 +415,29 @@ function Add-ExtrasPackages {
         Write-Cyan "Instalando CNPACK Wizard"
         DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $TempDir
         Start-Process -FilePath $cnPackPath -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null    
-    }else {
+    }
+    else {
         Write-Warning -Message "CnPack já está instalado."
     }
 
+    if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
+        Write-Cyan "Registrando WinRAR"
+        DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
+        Copy-Item "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR" -Force
+    }
+    else {
+        Write-Warning -Message "Arquivo já existe."        
+    }
+
+    if (-not(Test-Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
+        Write-Cyan "Instalando qBitTorrent"
+        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $TempDir
+        Start-Process -FilePath $qBitTorrentUrl -ArgumentList "/S" -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null    
+    }
+    else {
+        Write-Warning -Message "qBitTorrent já está instalado."
+    }
+    
     Write-Cyan "Dowload QuickLook Plugins"
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
