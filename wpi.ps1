@@ -243,9 +243,9 @@ function Set-ConfigSystem {
     Set-Ensure-InternetConnection
     Set-Ensure-OSCompatibility
 
-    if (-not (Test-Path $TempDir)) {
+    <#if (-not (Test-Path $TempDir)) {
         New-Item -ItemType Directory -Path $TempDir | Out-Null 
-    }
+    }#>
 }
 
 # ------------ INSTALAÇÃO DO WINGET ------------ #
@@ -255,7 +255,7 @@ function Install-WingetDependency {
         [string]$URL
     )
     $PackageName = [System.IO.Path]::GetFileName($URL)
-    $PackagePath = Join-Path -Path $TempDir -ChildPath $PackageName
+    $PackagePath = Join-Path -Path $PSScriptRoot -ChildPath $PackageName
     
     try {
         if (-not (Test-Path $PackagePath)) {
@@ -321,9 +321,9 @@ function Add-ExtrasPackages {
     $shana = [System.IO.Path]::GetFileName($shanaUrl)
     $codecs = [System.IO.Path]::GetFileName($codecUrl)
     $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
-    $shanaPath = Join-Path -Path $TempDir -ChildPath $shana
-    $codecsPath = Join-Path -Path $TempDir -ChildPath $codecs  
-    $cnPackPath = Join-Path -Path $TempDir -ChildPath $cnPack
+    $shanaPath = Join-Path -Path $PSScriptRoot -ChildPath $shana
+    $codecsPath = Join-Path -Path $PSScriptRoot -ChildPath $codecs  
+    $cnPackPath = Join-Path -Path $PSScriptRoot -ChildPath $cnPack
 
     Write-Cyan "Iniciando a instalação de extras..."
     
