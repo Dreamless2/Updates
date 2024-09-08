@@ -414,7 +414,7 @@ function Add-ExtrasPackages {
     if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
         Write-Cyan "Registrando WinRAR"
         DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
-        Copy-Item $TempDir\rarreg.key -Destination "C:\Program Files\WinRAR" -Force
+        Copy-Item "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR" -Force
     }
     else {
         Write-Warning -Message "Arquivo já existe."        
