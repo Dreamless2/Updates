@@ -1,7 +1,5 @@
-﻿$OutputEncoding = [System.Text.Encoding]::UTF8
-
-$TempDir = Join-Path -Path $PSScriptRoot -ChildPath "wpi_temp"
-$ErrorLog = Join-Path -Path $PSScriptRoot -ChildPath "wpi_errors.log"
+﻿#$TempDir = Join-Path -Path $PSScriptRoot -ChildPath "wpi_temp"
+#$ErrorLog = Join-Path -Path $PSScriptRoot -ChildPath "wpi_errors.log"
 
 # ------------ VARIÁVEIS ------------ #
 
@@ -87,11 +85,7 @@ function Exit-Error {
     exit 1
 }
 
-function Exit-Script {
-    Write-Cyan "Fazendo a limpeza do sistema... `nEventuais erros podem ser visualizados posteriormente em: '$ErrorLog'."
-    CleanUp
-    $error | Out-File -FilePath $ErrorLog
-    
+function Exit-Script {    
     Write-Yellow "Fim do script! `nReiniciar o sistema para aplicar alterações? (s = sim | n = não)" ; $i = Read-Host
     if ($i -ceq 's') {
         Write-Yellow "Reiniciando agora..."
@@ -184,12 +178,6 @@ function DownloadFileBitsTransfer {
     }
 }
 
-function CleanUp {
-    if (Test-Path $TempDir) {
-        Remove-Item -Path $TempDir -Recurse -Force | Out-Null 
-    }
-}
-
 function Set-Ensure-Admin {
     if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
         Exit-Error "Este script deve ser executado como Administrador!"
@@ -242,10 +230,6 @@ function Set-ConfigSystem {
     Set-Ensure-Admin
     Set-Ensure-InternetConnection
     Set-Ensure-OSCompatibility
-
-    <#if (-not (Test-Path $TempDir)) {
-        New-Item -ItemType Directory -Path $TempDir | Out-Null 
-    }#>
 }
 
 # ------------ INSTALAÇÃO DO WINGET ------------ #
