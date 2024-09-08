@@ -54,7 +54,6 @@ $PKGS = @(
 
 # ------------ FUNÇÕES DE SAÍDA ------------ #
 
-
 function Write-Cyan {
     param(
         [string]$Message
@@ -356,12 +355,13 @@ function Add-ExtrasPackages {
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
     $presets = "C:\ShanaEncoder\presets"
     $settings = "C:\ShanaEncoder\settings" 
+
     $shana = [System.IO.Path]::GetFileName($shanaUrl)
     $codecs = [System.IO.Path]::GetFileName($codecUrl)
     $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
     $shanaPath = Join-Path -Path $TempDir -ChildPath $shana
     $codecsPath = Join-Path -Path $TempDir -ChildPath $codecs  
-    $cnPackPath = Join-Path -Path $TempDir -ChildPath $cnPack
+    $cnPackPath = Join-Path -Path $TempDir -ChildPath $cnPack    
 
     Write-Cyan "Iniciando a instalação de extras..."
     
@@ -412,22 +412,26 @@ function Add-ExtrasPackages {
     }
 
     if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
+        Write-Cyan "Registrando WinRAR"
         DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
-        Copy-Item $TempDir\rarreg.key -Destination C:\Program Files\WinRAR -Force
+        Copy-Item $TempDir\rarreg.key -Destination "C:\Program Files\WinRAR" -Force
     }
     else {
         Write-Warning -Message "Arquivo já existe."        
     }
 
-    Write-Cyan "Instalando CNPACK Wizard"
-    DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $TempDir
-    Start-Process -FilePath $cnPackPath -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null    
+    if (-not(Test-Path "C:\Program Files (x86)\CnPack")) {
+        Write-Cyan "Instalando CNPACK Wizard"
+        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $TempDir
+        Start-Process -FilePath $cnPackPath -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null    
+    }else {
+        Write-Warning -Message "CnPack já está instalado."
+    }
 
     Write-Cyan "Dowload QuickLook Plugins"
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
-
     Write-Green "Fim da instalação de pacotes."
 }
 
