@@ -1,6 +1,7 @@
 $TempDir = $env:TEMP
 $LogFile = "$env:TEMP\WPI_Log\WPI.log"
 
+Invoke-WebRequest -Uri "https://gist.githubusercontent.com/Thermionix/6806471/raw/162374ce80a6a4d0ac3529c62183acf513b39145/mount.iso.psm1" -OutFile "$TempDir\mount.iso.psm1"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
 
 if (Test-Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
@@ -505,13 +506,25 @@ function Set-LaragonConfiguration {
     DownloadFileBitsTransfer -SourceUri $apache -DestinationPath $apachePath
     DownloadFileBitsTransfer -SourceUri $notepadplusplus -DestinationPath $notepadplusplusPath
     DownloadFileBitsTransfer -SourceUri $nginx -DestinationPath $nginxPath
-    Expand-Archive -LiteralPath $apachePath -DestinationPath "C:\laragon\bin\apache"
-    Expand-Archive -LiteralPath $phpPath -DestinationPath "C:\laragon\bin\php\php8"
-    Expand-Archive -LiteralPath $notepadplusplusPath -DestinationPath "C:\laragon\bin\notepad++"
-    Expand-Archive -LiteralPath $nginxPath -DestinationPath "C:\laragon\bin\nginx"
+    Expand-Archive -LiteralPath $apachePath -DestinationPath "C:\laragon\bin\apache" -Force
+    Expand-Archive -LiteralPath $phpPath -DestinationPath "C:\laragon\bin\php\php8" -Force
+    Expand-Archive -LiteralPath $notepadplusplusPath -DestinationPath "C:\laragon\bin\notepad++" -Force
+    Expand-Archive -LiteralPath $nginxPath -DestinationPath "C:\laragon\bin\nginx" -Force
     DS_DeleteFile "C:\laragon\bin\apache\-- Win64 VS17  --"
     DS_DeleteFile "C:\laragon\bin\apache\ReadMe.txt"
     DS_WriteLog -InformationType "I" -Text "Laragon configurado." -LogFile $LogFile
+}
+
+function Get-Delphi12 {
+    $aria = "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip"
+    $delphiISO = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"
+    $ariaName = [System.IO.Path]::GetFileName($aria)
+    $ariaPath = Join-Path $TempDir $ariaName
+    DS_WriteLog -InformationType "I" -Text "Download aria2c" -LogFile $LogFile
+    DownloadFileBitsTransfer -SourceUri $aria -DestinationPath $ariaPath
+    Expand-Archive -LiteralPath $ariaPath -DestinationPath $TempDir -Force
+    DS_CopyFile -SourceFiles "$TempDir\aria2-1.37.0-win-64bit-build1\aria2c.exe" -Destination $TempDir
+    DS_ExecuteProcess -FileName "$TempDir\aria2c.exe" -Arguments "--dry-run=true --check-certificate=false --allow-overwrite=true -s 5 -k 1M -x 6 -j 6 --human-readable=true --file-allocation=none $delphiISO -d $env:USERPROFILE\Downloads"
 }
 
 # ------------ EXECUÇÃO ------------ #
@@ -527,5 +540,5 @@ Install-Winget
 Install-WingetPackages
 Add-ExtrasPackages
 Set-LaragonConfiguration
+Get-Delphi12
 Exit-Script
-
