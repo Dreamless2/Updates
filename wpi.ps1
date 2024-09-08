@@ -1,6 +1,3 @@
-﻿#$TempDir = Join-Path -Path $PSScriptRoot -ChildPath "wpi_temp"
-#$ErrorLog = Join-Path -Path $PSScriptRoot -ChildPath "wpi_errors.log"
-
 # ------------ VARIÁVEIS ------------ #
 
 $PKGS = @(
@@ -239,12 +236,12 @@ function Install-WingetDependency {
         [string]$URL
     )
     $PackageName = [System.IO.Path]::GetFileName($URL)
-    $PackagePath = Join-Path -Path $PSScriptRoot -ChildPath $PackageName
+    #$PackagePath = Join-Path -Path $PSScriptRoot -ChildPath $PackageName
     
     try {
         if (-not (Test-Path $PackagePath)) {
             Write-Cyan "Fazendo o download de $PackageName..."
-            DownloadFileBitsTransfer -SourceUri $URL -DestinationPath $PackagePath
+            DownloadFileBitsTransfer -SourceUri $URL -DestinationPath $PSScriptRoot
         }
         Add-AppxPackage -Path $PackagePath -ErrorAction Stop | Out-Null
     }
@@ -312,21 +309,20 @@ function Add-ExtrasPackages {
     Write-Cyan "Iniciando a instalação de extras..."
     
     if (-not(Test-Path "C:\ShanaEncoder")) {        
-        DownloadFileBitsTransfer -SourceUri $codec -DestinationPath $codecsPath
-        DownloadFileBitsTransfer -SourceUri $url -DestinationPath $shanaPath
+        DownloadFileBitsTransfer -SourceUri $codec -DestinationPath $PSScriptRoot
+        DownloadFileBitsTransfer -SourceUri $url -DestinationPath $PSScriptRoot
         Start-Process -FilePath $shana -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null
         Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy to AVI.xml" -Force
         Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy to MKV.xml" -Force
         Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy(TS, TP).xml" -Force
-        Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy.xml" -Force
-        
+        Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy.xml" -Force        
     }
     else {
         Write-Warning -Message "Shana Encoder já está instalado."
     }
 
     if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
-        DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
+        DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $PSScriptRoot
         Copy-Item $TempDir\rarreg.key -Destination C:\Program Files\WinRAR -Force
     }
     else {
@@ -334,7 +330,7 @@ function Add-ExtrasPackages {
     }
 
     Write-Cyan "Instalando CNPACK Wizard"
-    DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $TempDir
+    DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $PSScriptRoot
     Start-Process -FilePath $cnPackPath -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null    
 
     Write-Cyan "Dowload QuickLook Plugins"
