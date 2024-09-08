@@ -41,7 +41,6 @@ $PKGS = @(
     "GitHub.cli",
     "Foxit.FoxitReader",    
     "MoritzBunkus.MKVToolNix", 
-    "arch1t3cht.Aegisub",
     "LeNgocKhoa.Laragon",
     "CodeSector.TeraCopy",
     "CodeSector.DirectFolders",
@@ -77,6 +76,14 @@ function Write-Yellow {
     Write-Host $Message -ForegroundColor Yellow
 }
 
+function Write-Red {
+    param(
+        [string]$Message
+    )
+    Write-Host $Message -ForegroundColor Red
+}
+
+
 function Exit-Error {
     param ([string]$ErrorMessage)
 
@@ -85,14 +92,16 @@ function Exit-Error {
 }
 
 function Exit-Script {
-    Write-Cyan "Fazendo a limpeza do sistema... `nEventuais erros podem ser visualizados posteriormente em: '$ErrorLog'."
-    CleanUp
-    $error | Out-File -FilePath $ErrorLog
-    
+    Clear-TempFiles   
     Write-Yellow "Fim do script! `nReiniciar o sistema para aplicar alterações? (s = sim | n = não)" ; $i = Read-Host
     if ($i -ceq 's') {
         Write-Yellow "Reiniciando agora..."
-        Restart-Computer -Force
+        try {
+            Restart-Computer -Force
+        }
+        catch {
+            Write-Yellow "Falha ao reiniciar o sistema. Favor reiniciar manualmente."
+        }
     }    
     exit 0
 }
@@ -181,9 +190,28 @@ function DownloadFileBitsTransfer {
     }
 }
 
-function CleanUp {
-    if (Test-Path $TempDir) {
-        Remove-Item -Path $TempDir -Recurse -Force | Out-Null 
+function Clear-TempFiles {
+    $tempPath = $env:TEMP
+
+    try {
+        Write-Cyan "Limpando todos os arquivos em $tempPath..."
+
+        $tempFiles = Get-ChildItem -Path $tempPath -Recurse
+
+        foreach ($file in $tempFiles) {
+            try {
+                Remove-Item -Path $file.FullName -Force -Recurse
+                Write-Green "Removido: $($file.FullName)" -ForegroundColor Green
+            }
+            catch {
+                Write-Warning "Falha ao remover: $($file.FullName). Motivo: $_"
+            }
+        }
+
+        Write-Green "Limpeza concluída."
+    }
+    catch {
+        Write-Red "Ocorreu um erro ao tentar limpar a pasta TEMP: $_"
     }
 }
 
@@ -232,7 +260,6 @@ function Set-Wallpaper {
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $wallpaperPath -Type String -Force
     Invoke-Expression -Command 'rundll32.exe user32.dll, UpdatePerUserSystemParameters 1, True'
     Write-Green "Personalizações aplicadas. O Windows Explorer será reiniciado."
-    Pause
     Stop-Process -Name explorer -Force ; Start-Process explorer
 }
 function Set-ConfigSystem {
@@ -265,15 +292,27 @@ function Install-WingetDependency {
         Exit-Error "Erro ao baixar ou instalar $PackageName"
     }
 }
-
 function Install-Winget {
     Write-Cyan "Iniciando o download e instalação do Winget e suas dependências..."
-    Install-WingetDependency "https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/Microsoft.VCLibs.x64.14.00.Desktop.appx"
-    Install-WingetDependency "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
-    Install-WingetDependency "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"    
-    Invoke-Expression -Command "echo y | winget list --accept-source-agreements" -ErrorAction Stop | Out-Null
-    Write-Green "Winget foi devidamente atualizado e está pronto para o uso."
+
+    try {
+        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+            Install-WingetDependency "https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/Microsoft.VCLibs.x64.14.00.Desktop.appx"
+            Install-WingetDependency "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
+            Install-WingetDependency "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"    
+
+            winget list --accept-source-agreements -ErrorAction Stop | Out-Null
+            Write-Green "Winget foi devidamente atualizado e está pronto para o uso."
+        }
+        else {
+            Write-Green "Winget já está instalado."
+        }
+    }
+    catch {
+        Write-Red "Ocorreu um erro durante a instalação do Winget: $_"
+    }
 }
+
 
 # ------------ INSTALAÇÃO DOS PACOTES ------------ #
 
@@ -315,6 +354,8 @@ function Add-ExtrasPackages {
     $codecUrl = "https://file.shana.pe.kr/lib/CodecLibrary.v1.2.x64.7z"
     $regUrl = "https://gist.githubusercontent.com/MuhammadSaim/de84d1ca59952cf1efaa8c061aab81a1/raw/ca31cbda01412e85949810d52d03573af281f826/rarreg.key"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $presets = "C:\ShanaEncoder\presets"
+    $settings = "C:\ShanaEncoder\settings" 
     $shana = [System.IO.Path]::GetFileName($shanaUrl)
     $codecs = [System.IO.Path]::GetFileName($codecUrl)
     $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
@@ -325,14 +366,46 @@ function Add-ExtrasPackages {
     Write-Cyan "Iniciando a instalação de extras..."
     
     if (-not(Test-Path "C:\ShanaEncoder")) {        
-        DownloadFileBitsTransfer -SourceUri $codec -DestinationPath $codecsPath
-        DownloadFileBitsTransfer -SourceUri $url -DestinationPath $shanaPath
+        DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
+        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath
         Start-Process -FilePath $shanaPath\$shana -Wait -NoNewWindow -ErrorAction SilentlyContinue | Out-Null
-        Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy to AVI.xml" -Force
-        Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy to MKV.xml" -Force
-        Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy(TS, TP).xml" -Force
-        Remove-Item -Path "C:\ShanaEncoder\presets\(Copy)\Stream Copy.xml" -Force
+        $xml = @(
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Dub.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Leg.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/Stream%20Copy%20to%20MP4.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/shanaapp.xml"
+        )
         
+        $cleanUrls = $xml | ForEach-Object { [uri]::UnescapeDataString($_) }        
+        $downloadDir = "$env:TEMP"
+        $TempDir = "$env:TEMP"
+        
+        foreach ($url in $cleanUrls) {   
+            $fileName = [System.IO.Path]::GetFileName($url)
+            $filePath = Join-Path $downloadDir $fileName
+            Invoke-WebRequest -Uri $url -OutFile $filePath
+            Write-Host "Arquivo salvo em: $filePath"        
+        }
+              
+        if (Test-Path $presets) {        
+            Remove-Item -Path $presets -Force -Recurse
+        }
+        
+        New-Item -ItemType Directory -Path "$presets\(Copy)" -Force
+        New-Item -ItemType Directory -Path "$presets\MP4" -Force          
+        Copy-Item -Path "$TempDir\MP4 HD Dub.xml" -Destination "$presets\MP4" -Force
+        Copy-Item -Path "$TempDir\MP4 HD Leg.xml" -Destination "$presets\MP4" -Force
+        Copy-Item -Path "$TempDir\MP4 SD Dub.xml" -Destination "$presets\MP4" -Force
+        Copy-Item -Path "$TempDir\MP4 SD Leg.xml" -Destination "$presets\MP4" -Force
+        Copy-Item -Path "$TempDir\Stream Copy to MP4.xml" -Destination "$presets\(Copy)" -Force
+        
+        if (Test-Path $settings) {
+            Remove-Item -Path $settings -Force -Recurse
+        }
+        New-Item -ItemType Directory -Path $settings -Force
+        Copy-Item -Path "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" -Force        
     }
     else {
         Write-Warning -Message "Shana Encoder já está instalado."
