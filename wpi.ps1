@@ -1,13 +1,11 @@
 $TempDir = $env:TEMP
 $LogFile = "$env:TEMP\WPI_Log\WPI.log"
 
-<#Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
-}#>
-
-Import-Module .\DS_PowerShell_Function_Library.psm1
+}
 
 # ------------ VARIÁVEIS ------------ #
 
