@@ -309,10 +309,10 @@ function Add-ExtrasPackages {
     $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
     $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
     $shanaPath = Join-Path $TempDir $shana
-    $codecsPath = Join-Path$TempDir $codecs  
+    $codecsPath = Join-Path $TempDir $codecs  
     $cnPackPath = Join-Path $TempDir $cnPack    
     $inviskaPath = Join-Path $TempDir $inviska
-    $qBitTorrentPath = Join-Path$TempDir $qBitTorrent
+    $qBitTorrentPath = Join-Path $TempDir $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
