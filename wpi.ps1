@@ -1,11 +1,13 @@
 $TempDir = $env:TEMP
 $LogFile = "$env:TEMP\WPI_Log\WPI.log"
 
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
+<#Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
 
-if (Test-Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
+if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
-}
+}#>
+
+Import-Module .\DS_PowerShell_Function_Library.psm1
 
 # ------------ VARIÁVEIS ------------ #
 
@@ -86,13 +88,15 @@ function DownloadFileWebRequest {
         [Parameter(Mandatory = $true)]
         [string]$DestinationPath
     )
+
+    $name = [System.IO.Path]::GetFileName($SourceUri)
      
     try {       
         Invoke-WebRequest -Uri $SourceUri -OutFile $DestinationPath
-        DS_WriteLog "I" "Download successful using Invoke-WebRequest." $LogFile
+        DS_WriteLog "I" "Download $name successful." $LogFile
     }
     catch {        
-        DS_WriteLog "E" "An error occurred while downloading using Invoke-WebRequest. Error details: $_.Exception.Message" $LogFile
+        DS_WriteLog "E" "An error occurred while downloading $name. Error details: $_.Exception.Message" $LogFile
     }
 }
 
@@ -107,13 +111,15 @@ function DownloadFileWebClient {
         [string]$DestinationPath
     )
      
+    $name = [System.IO.Path]::GetFileName($SourceUri)
+
     try {
         $webClient = New-Object System.Net.WebClient
         $webClient.DownloadFile($SourceUri, $DestinationPath)
-        DS_WriteLog "I" "Download successful using WebClient." $LogFile
+        DS_WriteLog "I" "Download $name successful." $LogFile
     }
     catch {
-        DS_WriteLog "E" "An error occurred while downloading using WebClient. Error details: $_.Exception.Message" $LogFile
+        DS_WriteLog "E" "An error occurred while downloading $name. Error details: $_.Exception.Message" $LogFile
     }
 }
 
@@ -127,6 +133,8 @@ function DownloadFileBitsTransfer {
         [string]$DestinationPath
     )
      
+    $name = [System.IO.Path]::GetFileName($SourceUri)
+
     try {
         $bitsJob = Start-BitsTransfer -Source $SourceUri -Destination $DestinationPath -Asynchronous
          
@@ -142,10 +150,10 @@ function DownloadFileBitsTransfer {
             Complete-BitsTransfer -BitsJob $bitsJob
         }
          
-        DS_WriteLog "I" "Download successful using BitsTransfer." $LogFile
+        DS_WriteLog "I" "Download $name successful." $LogFile
     }
     catch {
-        DS_WriteLog "E" "An error occurred while downloading using BitsTransfer. Error details: $_.Exception.Message" $LogFile
+        DS_WriteLog "E" "An error occurred while downloading $name. Error details: $_.Exception.Message" $LogFile
     }
 }
 
@@ -285,23 +293,67 @@ function Install-WingetPackages {
     }
 
     DS_WriteLog "I" "All packages installed." $LogFile
-    DS_WriteLog "I" "$count of $($PKGS.Count) packages were installed successfully." $LogFile
+    DS_WriteLog "I" "$count of $($PKGS.Count) packages were installed successful." $LogFile
 }
 
-function Disable-Superfetch {
-    DS_ChangeServiceStartupType -ServiceName "SysMain" -StartupType "Disabled" 
-    DS_StopService -ServiceName "SysMain" 
+function Disable-Services {
+    $services = @(
+        "CertPropSvc"                              # Certificates Propagation Service
+        "diagnosticshub.standardcollector.service" # Microsoft (R) Diagnostics Hub Standard Collector Service
+        "DiagTrack"                                # Diagnostics Tracking Service
+        "DPS"                                      # Diagnostic Policies Service
+        "dmwappushservice"                         # WAP Push Message Routing Service  
+        "iphlpsvc"                                 # Auxiliar IP App
+        "lfsvc"                                    # Geolocation Service
+        "lmhosts"                                  # NetBIOS over TCP/IP Auxiliar App
+        "MapsBroker"                               # Downloaded Maps Manager
+        "MSiSCSI"                                  # Microsoft iSCSI Initatior Service
+        "Netlogon"                                 # NetLogon Service
+        "PcaSvc"                                   # Compatibility Programs Assistant Service
+        "RemoteRegistry"                           # Remote Registry
+        "RemoteAccess"                             # Routing and Remote Access
+        "RpcLocator"                               # Remote Procedure Call (RPC) Locator
+        "SCardSvr"                                 # Smart card
+        "SCPolicySvc"                              # Smart card Extraction Policy Service
+        "SharedAccess"                             # Internet Connection Sharing (ICS)
+        "SNMPTRAP"                                 # SNMP Capture Service
+        "Spooler"                                  # Print Spooler Service
+        "stisvc"                                   # Windows Image acquisition (WIA) Service
+        "TabletInputService"                       # Handwriting Panel and touch keyboard Service
+        "TrkWks"                                   # Distributed Link Tracking Client
+        "WbioSrvc"                                 # Windows Biometric Service
+        "WlanSvc"                                  # WLAN AutoConfig    
+        "WMPNetworkSvc"                            # Windows Media Player Network Sharing Service
+        "SysMain"                                  # SuperFetch
+        "WSearch"                                  # Windows Search
+    )
+
+    foreach ($service in $services) {
+        DS_WriteLog "I" "Disabling and stopping unnecessary services..." $LogFile
+        DS_ChangeServiceStartupType -ServiceName $service -StartupType "Disabled" 
+        DS_StopService -ServiceName $service
+        DS_WriteLog "S" "Unnecessary service $service disabled and stopped successful." $LogFile
+    }
+}
+
+function Remove-WindowsDefender {
+    DS_WriteLog "I" "Downloading Windows Defender Removal..."
+    $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"
+    $defenderName = [System.IO.Path]::GetFileName($defenderUrl)
+    $defenderPath = Join-Path $TempDir $defenderName
+    DownloadFileBitsTransfer -SourceUri $defenderUrl -DestinationPath $defenderPath
+    Start-Process -FilePath $defenderPath -Wait -NoNewWindow
 }
 
 function Add-ExtrasPackages {
     $presets = "C:\ShanaEncoder\presets"
     $settings = "C:\ShanaEncoder\settings" 
-    $shanaUrl = "https://sinalbr.dl.sourceforge.net/project/shanaencoder/ShanaEncoder6.0.1.7.exe"
-    $codecUrl = "https://file.shana.pe.kr/lib/CodecLibrary.v1.2.x64.7z"
-    $regUrl = "https://gist.githubusercontent.com/MuhammadSaim/de84d1ca59952cf1efaa8c061aab81a1/raw/ca31cbda01412e85949810d52d03573af281f826/rarreg.key"
+    $shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
+    $codecUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
+    $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
-    $qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.6/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
-    $inviskaUrl = "https://www.videohelp.com/download/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
+    $qBitTorrentUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
+    $inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
     $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"  
 
     $shana = [System.IO.Path]::GetFileName($shanaUrl)
@@ -319,11 +371,11 @@ function Add-ExtrasPackages {
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
-    if (-not(Test-Path "C:\ShanaEncoder")) {        
+    if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
         DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
         DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
         DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath                
-        Start-Process -FilePath $shanaPath -Wait -NoNewWindow
+        DS_InstallOrUninstallSoftware -File $shanaPath -InstallationType "Install" -Arguments ""        
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
@@ -342,8 +394,7 @@ function Add-ExtrasPackages {
             DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
         }
               
-        if (Test-Path -Path $presets) {        
-            Remove-Item -Path $presets -Force -Recurse
+        if (Test-Path -Path $presets) {                    
             DS_DeleteDirectory -Directory $presets            
         }        
 
@@ -351,6 +402,7 @@ function Add-ExtrasPackages {
             DS_DeleteDirectory -File $settings
         }     
        
+        DS_CreateDirectory -Directory $presets
         DS_CreateDirectory -Directory "$presets\(Copy)"
         DS_CreateDirectory -Directory "$presets\MP4"     
         DS_CreateDirectory -Directory $settings                  
@@ -365,7 +417,7 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "Shana Encoder already installed." $LogFile
     }
 
-    if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
+    if (-not(Test-Path -Path "C:\Program Files\WinRAR\rarreg.key")) {
         DS_WriteLog "I" "Registering WinRAR..." $LogFile
         DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
         DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
@@ -374,37 +426,38 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "Winrar already registered." $LogFile        
     }
 
-    if (-not(Test-Path "C:\Program Files (x86)\CnPack")) {
-        DS_WriteLog "I" "Installing CNPACK Wizard..." $LogFile
+    if (-not(Test-Path -Path "C:\Program Files (x86)\CnPack")) {
+        DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
         DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath  
-        Start-Process -FilePath $cnPackPath -Wait -NoNewWindow            
+        DS_InstallOrUninstallSoftware -File $cnPackPath -InstallationType "Install" -Arguments ""                    
     }
     else {
         DS_WriteLog "W" "CnPack already installed." $LogFile
     }  
 
-    if (-not(Test-Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
+    if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath             
-        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S"
+        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath      
+        DS_InstallOrUninstallSoftware -File $qBitTorrentPath -InstallationType "Install" -Arguments "/S"                     
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
     }
     
-    if (-not(Test-Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
+    if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
         DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
-        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow
+        DS_InstallOrUninstallSoftware -File $inviskaUrl -InstallationType "Install" -Arguments ""          
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
     }
 
-    if (-not(Test-Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
+    if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
         DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath
-        Start-Process "msiexec.exe" -ArgumentList "/i ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    }
+        DS_InstallOrUninstallSoftware -File $qBitTorrentPath -InstallationType "Install" -Arguments "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome"    
+    }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
     }
@@ -413,7 +466,8 @@ function Add-ExtrasPackages {
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"   
-    DS_WriteLog "I" "Packages Installed Successfully." $LogFile
+    DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
+    DS_WriteLog "S" "Packages Installed successful." $LogFile
 }
 
 function Set-BitTorrentFolders {
@@ -436,7 +490,7 @@ function Set-IDMFolders {
 
     if (-not(Test-Path $idmDir)) {
         DS_CreateDirectory -Directory $idmDir
-        foreach ($folder in $folders) {
+        foreach ($folder in $folders) {            
             DS_CreateDirectory -Directory $idmDir\$folder
         }
     }
@@ -510,12 +564,15 @@ function Set-LaragonConfiguration {
     DS_DeleteFile "C:\laragon\bin\apache\ReadMe.txt"
     DS_WriteLog "I" "Laragon configured." $LogFile
 }
+
 function Invoke-ISOExe {
     param (
         [parameter(Mandatory = $True)]
         [string] $ISO,  
         [parameter(Mandatory = $True)]
-        [string] $ExeName    		
+        [string] $ExeName,  		
+        [parameter(Mandatory = $False)]
+        [string] $ExeArgs = ""
     )
 
     DS_WriteLog "I" "Mounting $ISO" $LogFile
@@ -526,9 +583,14 @@ function Invoke-ISOExe {
 
     if ($driveLetter) {
         $exeFullPath = "$($driveLetter):\$ExeName"      
-
+       
         if (Test-Path $exeFullPath) {
-            Start-Process -FilePath $exeFullPath -Wait
+            if ([string]::IsNullOrEmpty($ExeArgs)) {
+                Start-Process -FilePath $exeFullPath -Wait -NoNewWindow
+            }
+            else {
+                Start-Process -FilePath $exeFullPath -ArgumentList $ExeArgs -Wait -NoNewWindow 
+            }
         }
         else {
             DS_WriteLog "E" "The file '$exeFullPath' not found." $LogFile
@@ -557,11 +619,11 @@ function Get-Delphi12 {
 
 # ------------ EXECUÇÃO ------------ #
 
+Disable-Services
 Set-ConfigSystem
+Set-Wallpaper
 Install-Winget
 Install-WingetPackages
-Disable-Superfetch
-Set-Wallpaper
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
