@@ -1,6 +1,8 @@
 $TempDir = $env:TEMP
 $LogFile = "$env:TEMP\WPI_Log\WPI.log"
 
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -OutFile "$TempDir\aria2.conf"
+Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -OutFile "$TempDir\aria2c.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
@@ -53,8 +55,7 @@ $PKGS = @(
     "Gyan.FFmpeg",
     "QL-Win.QuickLook",
     "MediaArea.MediaInfo.GUI",
-    "ArduinoSA.IDE.stable",
-    "FxSoundLLC.FxSound", 
+    "ArduinoSA.IDE.stable",    
     "Flameshot.Flameshot",
     "Microsoft.VisualStudio.2022.Enterprise"    
 )
@@ -149,6 +150,48 @@ function DownloadFileBitsTransfer {
     }
 }
 
+function DownloadAria2 {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Url,
+        [Parameter()]
+        [string]$DestinationPath = "$env:TEMP"           
+    )
+
+    $Aria2ConfigPath = "$TempDir\aria2.conf"
+    $Aria2ExePath = "$TempDir\aria2c.exe"    
+
+    if (-not $Url -or $Url -notmatch '^(http|https|ftp)://') {
+        DS_WriteLog "E" "Error: Invalid URL. Please provide a valid URL." $LogFile
+        return
+    } 
+
+    if (-not (Test-Path -Path $Aria2ExePath)) {
+        DS_WriteLog "E" "Error: aria2 executable not found at $Aria2ExePath." $LogFile
+        return
+    }
+
+    $name = [System.IO.Path]::GetFileName($Url)
+
+    $fileName = [System.IO.Path]::GetFileName($Url)
+    $aria2Command = "$Aria2ExePath --conf-path=$Aria2ConfigPath --dir=$DestinationPath --out=$fileName $Url"
+
+    DS_WriteLog "I" "Executing command: $aria2Command" $LogFile
+
+    try {
+        $process = Start-Process -FilePath $Aria2ExePath -ArgumentList "--conf-path=$Aria2ConfigPath", "--dir=$DestinationPath", "--out=$fileName", "$Url" -NoNewWindow -PassThru -Wait
+        if ($process.ExitCode -eq 0) {
+            DS_WriteLog "I" "File $name downloaded." $LogFile
+        }
+        else {
+            DS_WriteLog "E" "Error: Download failed with exit code $($process.ExitCode)." $LogFile
+        }
+    }
+    catch {
+        DS_WriteLog "E" "Error executing aria2 command: $_" $LogFile
+    }
+}
+
 function Clear-TempFiles {
     try {
         DS_WriteLog "I" "Clean all files on $TempDir..." $LogFile
@@ -207,7 +250,7 @@ function Set-Ensure-OSCompatibility {
 }
 
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/28298948/pexels-photo-28298948/free-photo-of-estrasburgo-petite-france.jpeg"
+    $wallpaperUrl = "https://images.pexels.com/photos/28173305/pexels-photo-28173305/free-photo-of-por-do-sol-brilhante-da-cidade-emoldurado-por-edificios.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE -ChildPath $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
@@ -240,7 +283,7 @@ function Install-WingetDependency {
     try {
         if (-not (Test-Path $PackagePath)) {
             DS_WriteLog "I" "Downloading $PackageName..." $LogFile
-            DownloadFileBitsTransfer -SourceUri $URL -DestinationPath $PackagePath
+            DownloadFileWebRequest -SourceUri $URL -DestinationPath $PackagePath
         }
         Add-AppxPackage -Path $PackagePath -ErrorAction Stop | Out-Null
     }
@@ -329,11 +372,11 @@ function Disable-Services {
 }
 
 function Remove-WindowsDefender {
-    DS_WriteLog "I" "Downloading Windows Defender Removal..."
+    DS_WriteLog "I" "Downloading Windows Defender Removal..." $LogFile
     $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"
     $defenderName = [System.IO.Path]::GetFileName($defenderUrl)
     $defenderPath = Join-Path $TempDir $defenderName
-    DownloadFileBitsTransfer -SourceUri $defenderUrl -DestinationPath $defenderPath
+    DownloadFileWebRequest -SourceUri $defenderUrl -DestinationPath $defenderPath
     Start-Process -FilePath $defenderPath -Wait -NoNewWindow
 }
 
@@ -342,31 +385,25 @@ function Add-ExtrasPackages {
     $settings = "C:\ShanaEncoder\settings" 
     $shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
     $codecUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
-    $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"
-    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
     $qBitTorrentUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
     $inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
-    $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"  
-
-    $shana = [System.IO.Path]::GetFileName($shanaUrl)
-    $codecs = [System.IO.Path]::GetFileName($codecUrl)
-    $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
+    $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"      
+    $shana = [System.IO.Path]::GetFileName($shanaUrl)        
     $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
     $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
     $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
-    $shanaPath = Join-Path -Path $TempDir -ChildPath $shana
-    $codecsPath = Join-Path -Path $TempDir -ChildPath $codecs  
-    $cnPackPath = Join-Path -Path $TempDir -ChildPath $cnPack    
-    $inviskaPath = Join-Path -Path $TempDir -ChildPath $inviska
-    $qBitTorrentPath = Join-Path -Path $TempDir -ChildPath $qBitTorrent
+    $shanaPath = Join-Path -Path $TempDir $shana      
+    $inviskaPath = Join-Path -Path $TempDir $inviska
+    $qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
     if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
         DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
-        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath        
+        DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
+        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
         Start-Process -FilePath $shanaPath -Wait -NoNewWindow
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
@@ -382,7 +419,7 @@ function Add-ExtrasPackages {
         foreach ($url in $cleanUrls) {   
             $fileName = [System.IO.Path]::GetFileName($url)
             $filePath = Join-Path $TempDir $fileName
-            DownloadFileBitsTransfer -SourceUri $url -DestinationPath $filePath
+            DownloadFileWebRequest -SourceUri $url -DestinationPath $filePath
             DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
         }           
     }
@@ -393,7 +430,7 @@ function Add-ExtrasPackages {
         }        
 
         if (Test-Path -Path $settings) {            
-            DS_DeleteDirectory -File $settings
+            DS_DeleteDirectory -Directory $settings
         }           
 
         DS_CreateDirectory -Directory "$presets\(Copy)"
@@ -410,53 +447,45 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path -Path "C:\Program Files\WinRAR\rarreg.key")) {
         DS_WriteLog "I" "Registering WinRAR..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
+        DownloadFileWebRequest -SourceUri $regUrl -DestinationPath $TempDir
         DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
     }
     else {
         DS_WriteLog "W" "Winrar already registered." $LogFile        
-    }
-
-    if (-not(Test-Path -Path "C:\Program Files (x86)\CnPack")) {
-        DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath
-        Start-Process -FilePath $cnPackPath -Wait -NoNewWindow             
-    }
-    else {
-        DS_WriteLog "W" "CnPack already installed." $LogFile
-    }  
+    }    
 
     if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath      
+        DownloadFileWebRequest -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath      
         Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow                     
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
     }
     
+    
     if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
-        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow        
+        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
+        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow                    
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
-    }
-
+    }    
+    
     if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath
-        Start-Process "msiexec" -ArgumentList "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    
+        DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
-    }
+    }    
 
     DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
-    DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
-    DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
-    DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
+    DownloadAria2 -Url "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
+    DownloadAria2 -Url "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
+    DownloadAria2 -Url "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
     DS_WriteLog "S" "Packages Installed successful." $LogFile
 }
@@ -519,20 +548,7 @@ function Set-TelegramFolders {
         DS_WriteLog "W" "Folders already exists." $LogFile
     }
 }
-
 function Set-LaragonConfiguration {    
-    $php = "https://windows.php.net/downloads/releases/php-8.3.11-nts-Win32-vs16-x64.zip"
-    $apache = "https://www.apachelounge.com/download/VS17/binaries/httpd-2.4.62-240904-win64-VS17.zip"
-    $notepadplusplus = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.portable.x64.zip"
-    $nginx = "https://nginx.org/download/nginx-1.27.1.zip"
-    $apacheName = [System.IO.Path]::GetFileName($apache)
-    $phpName = [System.IO.Path]::GetFileName($php)
-    $notepadplusplusName = [System.IO.Path]::GetFileName($notepadplusplus)
-    $nginxName = [System.IO.Path]::GetFileName($nginx)
-    $phpPath = Join-Path $TempDir $phpName
-    $apachePath = Join-Path $TempDir $apacheName
-    $notepadplusplusPath = Join-Path $TempDir $notepadplusplusName
-    $nginxPath = Join-Path $TempDir $nginxName
     DS_CleanupDirectory -Directory "C:\laragon\bin\php"
     DS_CleanupDirectory -Directory "C:\laragon\bin\apache"
     DS_CleanupDirectory -Directory "C:\laragon\bin\git"
@@ -543,14 +559,44 @@ function Set-LaragonConfiguration {
     DS_CleanupDirectory -Directory "C:\laragon\bin\nginx"
     DS_CleanupDirectory -Directory "C:\laragon\bin\python"
     DS_CreateDirectory -Directory "C:\laragon\bin\php\php8"
-    DownloadFileBitsTransfer -SourceUri $php -DestinationPath $phpPath
-    DownloadFileBitsTransfer -SourceUri $apache -DestinationPath $apachePath
-    DownloadFileBitsTransfer -SourceUri $notepadplusplus -DestinationPath $notepadplusplusPath
-    DownloadFileBitsTransfer -SourceUri $nginx -DestinationPath $nginxPath
-    Expand-Archive -LiteralPath $apachePath -DestinationPath "C:\laragon\bin\apache" -Force
-    Expand-Archive -LiteralPath $phpPath -DestinationPath "C:\laragon\bin\php\php8" -Force
-    Expand-Archive -LiteralPath $notepadplusplusPath -DestinationPath "C:\laragon\bin\notepad++" -Force
-    Expand-Archive -LiteralPath $nginxPath -DestinationPath "C:\laragon\bin\nginx" -Force
+    $php = "https://github.com/Dreamless2/Updates/releases/download/youpdates/php-8.3.11-nts-Win32-vs16-x64.zip"
+    $apache = "https://github.com/Dreamless2/Updates/releases/download/youpdates/httpd-2.4.62-240904-win64-VS17.zip"
+    $notepadplusplus = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.portable.x64.zip"
+    $nginx = "https://nginx.org/download/nginx-1.27.1.zip"
+    $apacheName = [System.IO.Path]::GetFileName($apache)
+    $phpName = [System.IO.Path]::GetFileName($php)
+    $notepadplusplusName = [System.IO.Path]::GetFileName($notepadplusplus)
+    $nginxName = [System.IO.Path]::GetFileName($nginx)   
+  
+    if (-not $php) { throw "php cannot be null or empty." }
+    if (-not $apache) { throw "apache cannot be null or empty." }
+    if (-not $notepadplusplus) { throw "notepadplusplus cannot be null or empty." }
+    if (-not $nginx) { throw "nginx cannot be null or empty." }
+
+    # Define un diccionario con las URLs, rutas y destinos
+    $downloads = @{
+        "php"             = @{ "Url" = $php; "Path" = Join-Path $TempDir $phpName; "Destination" = "C:\laragon\bin\php\php8" }
+        "apache"          = @{ "Url" = $apache; "Path" = Join-Path $TempDir $apacheName; "Destination" = "C:\laragon\bin\apache" }
+        "notepadplusplus" = @{ "Url" = $notepadplusplus; "Path" = Join-Path $TempDir $notepadplusplusName; "Destination" = "C:\laragon\bin\notepad++" }
+        "nginx"           = @{ "Url" = $nginx; "Path" = Join-Path $TempDir $nginxName; "Destination" = "C:\laragon\bin\nginx" }
+    }
+
+    foreach ($key in $downloads.Keys) {
+        $file = $downloads[$key]
+ 
+        if (-not $file.Path) { throw "La ruta para $key cannot be null or empty." }
+        if (-not $file.Url) { throw "La URL para $key cannot be null or empty." }
+        if (-not $file.Destination) { throw "El destino para $key cannot be null or empty." }
+    
+        if (!(Test-Path -Path $file.Path)) {      
+            DownloadAria2 -Url $file.Url -DestinationPath $TempDir        
+        }
+        else {
+            Expand-Archive -LiteralPath $file.Path -DestinationPath $file.Destination -Force
+        }
+    }
+
+    
     DS_DeleteFile "C:\laragon\bin\apache\-- Win64 VS17  --"
     DS_DeleteFile "C:\laragon\bin\apache\ReadMe.txt"
     DS_WriteLog "I" "Laragon configured." $LogFile
@@ -595,33 +641,42 @@ function Invoke-ISOExe {
     Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null   
     DS_WriteLog "S" "Unmounting Image $ISO successfully." $LogFile
 }
-
 function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
-    $delphi = [System.IO.Path]::GetFileName($delphiURL)
-    $ISOPath = "$env:USERPROFILE\Downloads\$delphi"
-    DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile
-    if (-not(Test-Path -Path $ISOPath)) {   
-        DownloadFileBitsTransfer -SourceUri $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"  
-    }
-    else {
-        Invoke-ISOExe -ISO $ISOPath -ExeName "radstudio_12_esd_117529a.exe"
+    $delphiName = [System.IO.Path]::GetFileName($delphiURL)
+    $delphiISOPath = Join-Path "$env:USERPROFILE\Downloads" $delphiName   
+    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
+    $cnPackPath = Join-Path -Path $TempDir $cnPack    
+    DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
+    DownloadAria2 -Url $delphiURL -DestinationPath $delphiISOPath
+    if (Test-Path $delphiISOPath) {
+        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
+        if (-not(Test-Path -Path "C:\Program Files (x86)\CnPack")) {
+            DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
+            DownloadFileWebRequest -SourceUri $cnPackUrl -DestinationPath $cnPackPath
+            Start-Process -FilePath $cnPackPath -Wait -NoNewWindow             
+        }
+        else {
+            DS_WriteLog "W" "CnPack already installed." $LogFile
+        }  
     }
 }
 
 # ------------ EXECUÇÃO ------------ #
 
+
 Disable-Services
 Set-ConfigSystem
-Get-Delphi12
 Set-Wallpaper
 Install-Winget
 Install-WingetPackages
+Get-Delphi12
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
 Set-TelegramFolders
-Set-LaragonConfiguration
 Add-ExtrasPackages
+Set-LaragonConfiguration
 Remove-WindowsDefender
 Exit-Script
