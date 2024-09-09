@@ -126,56 +126,22 @@ function DownloadFileBitsTransfer {
         [Parameter(Mandatory = $true)]
         [string]$SourceUri,        
         [Parameter(Mandatory = $true)]
-        [string]$DestinationPath,
-        [switch]$includeStats
+        [string]$DestinationPath       
     )
      
     $name = [System.IO.Path]::GetFileName($SourceUri)
 
     try {
-        $bitsJob = Start-BitsTransfer -Source $SourceUri -Destination $DestinationPath -Asynchronous
-         
-        while (($bitsJob.JobState -eq 'Transferring') -or ($bitsJob.JobState -eq 'Connecting')) {
-            filter Get-FileSize {
-                "{0:N2} {1}" -f $(
-                    if ($_ -lt 1kb) { $_, 'Bytes' }
-                    elseif ($_ -lt 1mb) { ($_ / 1kb), 'KB' }
-                    elseif ($_ -lt 1gb) { ($_ / 1mb), 'MB' }
-                    elseif ($_ -lt 1tb) { ($_ / 1gb), 'GB' }
-                    elseif ($_ -lt 1pb) { ($_ / 1tb), 'TB' }
-                    else { ($_ / 1pb), 'PB' }
-                )
-            }               
-            $elapsed = ((Get-Date) - $start)
-            $averageSpeed = ($job.BytesTransferred * 8 / 1MB) / $elapsed.TotalSeconds
-            $elapsed = $elapsed.ToString('hh\:mm\:ss')
-            $remainingSeconds = ($job.BytesTotal - $job.BytesTransferred) * 8 / 1MB / $averageSpeed
-            $receivedSize = $job.BytesTransferred | Get-FileSize
-            $totalSize = $job.BytesTotal | Get-FileSize 
-            $progressPercentage = [int]($job.BytesTransferred / $job.BytesTotal * 100)      
-            if ($remainingSeconds -as [int]) {
-                Write-Progress -Activity (" $url {0:N2} Mbps" -f $averageSpeed) `
-                    -Status ("{0} of {1} ({2}% in {3})" -f $receivedSize, $totalSize, $progressPercentage, $elapsed) `
-                    -SecondsRemaining $remainingSeconds `
-                    -PercentComplete $progressPercentage
-            }
-        }
-
-        if ($includeStats.IsPresent) {
-            ([PSCustomObject]@{Name = $MyInvocation.MyCommand; TotalSize = $totalSize; Time = $elapsed }) | Out-Host
-        }
-        
-        Write-Progress -Activity (" $SourceUri {0:N2} Mbps" -f $averageSpeed) `
-            -Status 'Done' -Completed
+        $bitsJob = Start-BitsTransfer -Source $SourceUri -Destination $DestinationPath -Asynchronous        
          
         if ($bitsJob.JobState -eq 'Error') {
             Resume-BitsTransfer -BitsJob $bitsJob
         }
          
         if ($bitsJob.JobState -eq 'Transferred') {
-            Complete-BitsTransfer -BitsJob $bitsJob
-            Get-Item $DestinationPath | Unblock-File
+            Complete-BitsTransfer -BitsJob $bitsJob           
         }         
+
         DS_WriteLog "I" "Download $name successful." $LogFile
     }
     catch {
@@ -274,7 +240,7 @@ function Install-WingetDependency {
     try {
         if (-not (Test-Path $PackagePath)) {
             DS_WriteLog "I" "Downloading $PackageName..." $LogFile
-            DownloadFileBitsTransfer -SourceUri $URL -DestinationPath $PackagePath -includeStats
+            DownloadFileBitsTransfer -SourceUri $URL -DestinationPath $PackagePath
         }
         Add-AppxPackage -Path $PackagePath -ErrorAction Stop | Out-Null
     }
@@ -367,7 +333,7 @@ function Remove-WindowsDefender {
     $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"
     $defenderName = [System.IO.Path]::GetFileName($defenderUrl)
     $defenderPath = Join-Path $TempDir $defenderName
-    DownloadFileBitsTransfer -SourceUri $defenderUrl -DestinationPath $defenderPath -includeStats
+    DownloadFileBitsTransfer -SourceUri $defenderUrl -DestinationPath $defenderPath
     Start-Process -FilePath $defenderPath -Wait -NoNewWindow
 }
 
@@ -399,8 +365,8 @@ function Add-ExtrasPackages {
     
     if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
         DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath -includeStats
-        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath -includeStats        
+        DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
+        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath        
         Start-Process -FilePath $shanaPath -Wait -NoNewWindow
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
@@ -416,7 +382,7 @@ function Add-ExtrasPackages {
         foreach ($url in $cleanUrls) {   
             $fileName = [System.IO.Path]::GetFileName($url)
             $filePath = Join-Path $TempDir $fileName
-            DownloadFileBitsTransfer -SourceUri $url -DestinationPath $filePath -includeStats
+            DownloadFileBitsTransfer -SourceUri $url -DestinationPath $filePath
             DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
         }           
     }
@@ -444,8 +410,8 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path -Path "C:\Program Files\WinRAR\rarreg.key")) {
         DS_WriteLog "I" "Registering WinRAR..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir -includeStats
-        DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR" -includeStats
+        DownloadFileBitsTransfer -SourceUri $regUrl -DestinationPath $TempDir
+        DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
     }
     else {
         DS_WriteLog "W" "Winrar already registered." $LogFile        
@@ -453,7 +419,7 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path -Path "C:\Program Files (x86)\CnPack")) {
         DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath -includeStats
+        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath
         Start-Process -FilePath $cnPackPath -Wait -NoNewWindow             
     }
     else {
@@ -462,7 +428,7 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath -includeStats      
+        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath      
         Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow                     
     }
     else {
@@ -471,7 +437,7 @@ function Add-ExtrasPackages {
     
     if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath -includeStats
+        DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
         Start-Process -FilePath $inviskaPath -Wait -NoNewWindow        
     }
     else {
@@ -480,7 +446,7 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath -includeStats
+        DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath
         Start-Process "msiexec" -ArgumentList "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    
     }
     else {
@@ -488,9 +454,9 @@ function Add-ExtrasPackages {
     }
 
     DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
-    DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads" -includeStats
-    DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads" -includeStats
-    DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads" -includeStats
+    DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
+    DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
+    DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
     DS_WriteLog "S" "Packages Installed successful." $LogFile
 }
@@ -577,10 +543,10 @@ function Set-LaragonConfiguration {
     DS_CleanupDirectory -Directory "C:\laragon\bin\nginx"
     DS_CleanupDirectory -Directory "C:\laragon\bin\python"
     DS_CreateDirectory -Directory "C:\laragon\bin\php\php8"
-    DownloadFileBitsTransfer -SourceUri $php -DestinationPath $phpPath -includeStats
-    DownloadFileBitsTransfer -SourceUri $apache -DestinationPath $apachePath -includeStats
-    DownloadFileBitsTransfer -SourceUri $notepadplusplus -DestinationPath $notepadplusplusPath -includeStats
-    DownloadFileBitsTransfer -SourceUri $nginx -DestinationPath $nginxPath -includeStats
+    DownloadFileBitsTransfer -SourceUri $php -DestinationPath $phpPath
+    DownloadFileBitsTransfer -SourceUri $apache -DestinationPath $apachePath
+    DownloadFileBitsTransfer -SourceUri $notepadplusplus -DestinationPath $notepadplusplusPath
+    DownloadFileBitsTransfer -SourceUri $nginx -DestinationPath $nginxPath
     Expand-Archive -LiteralPath $apachePath -DestinationPath "C:\laragon\bin\apache" -Force
     Expand-Archive -LiteralPath $phpPath -DestinationPath "C:\laragon\bin\php\php8" -Force
     Expand-Archive -LiteralPath $notepadplusplusPath -DestinationPath "C:\laragon\bin\notepad++" -Force
@@ -635,7 +601,7 @@ function Get-Delphi12 {
     $ISOPath = "$env:USERPROFILE\Downloads\$delphi"
     DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile
     if (-not(Test-Path -Path $ISOPath)) {   
-        DownloadFileBitsTransfer -SourceUri $delphiURL -DestinationPath "$env:USERPROFILE\Downloads" -includeStats  
+        DownloadFileBitsTransfer -SourceUri $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"  
     }
     else {
         Invoke-ISOExe -ISO $ISOPath -ExeName "radstudio_12_esd_117529a.exe"
