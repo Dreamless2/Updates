@@ -411,7 +411,7 @@ function Add-ExtrasPackages {
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"   
-    DS_WriteLog "I" "Packages Installed Successfully." $LogFile
+    DS_WriteLog "I" "Packages installed successfully." $LogFile
 }
 
 function Set-BitTorrentFolders {
@@ -425,7 +425,7 @@ function Set-BitTorrentFolders {
         }
     }
     else {
-        DS_WriteLog "W" "Folders Already Exists." $LogFile
+        DS_WriteLog "W" "Folders already exists." $LogFile
     }
 }
 function Set-IDMFolders {
@@ -439,7 +439,7 @@ function Set-IDMFolders {
         }
     }
     else {
-        DS_WriteLog "W" "Folders Already Exists." $LogFile
+        DS_WriteLog "W" "Folders already exists." $LogFile
     }
 }
 
@@ -454,7 +454,7 @@ function Set-WinRARFolders {
         }
     }
     else {
-        DS_WriteLog "W" "Folders Already Exists." $LogFile
+        DS_WriteLog "W" "Folders already exists." $LogFile
     }
 }
 
@@ -469,7 +469,7 @@ function Set-TelegramFolders {
         DS_CreateDirectory -Directory $telegramDir 
     }
     else {
-        DS_WriteLog "W" "Folders Already Exists." $LogFile
+        DS_WriteLog "W" "Folders already exists." $LogFile
     }
 }
 
