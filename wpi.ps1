@@ -209,9 +209,9 @@ function Set-Wallpaper {
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE -ChildPath $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "JPEGImportQuality" -Value 100 -Type DWORD -Force
-    DownloadFileBitsTransfer -SourceUri $wallpaperUrl -DestinationPath $wallpaperPath
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $wallpaperPath -Type String -Force
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Control Panel\Desktop" -RegValueName "JPEGImportQuality" -RegValue "100" -Type "DWORD"
+    DownloadFileWebRequest -SourceUri $wallpaperUrl -DestinationPath $wallpaperPath
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Control Panel\Desktop" -RegValueName "Wallpaper" -RegValue "$wallpaperPath" -Type "String"
     Invoke-Expression -Command 'rundll32.exe user32.dll, UpdatePerUserSystemParameters 1, True'
     DS_WriteLog "I" "Customizations applied. Windows Explorer will restart." $LogFile
     Stop-Process -Name explorer -Force ; Start-Process explorer    
@@ -248,22 +248,11 @@ function Install-WingetDependency {
 }
 function Install-Winget {
     DS_WriteLog "I" "Starting the download and installation of Winget and its dependencies..." $LogFile
-
-    try {
-        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-            Install-WingetDependency "https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/Microsoft.VCLibs.x64.14.00.Desktop.appx"
-            Install-WingetDependency "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
-            Install-WingetDependency "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"    
-            winget list --accept-source-agreements -ErrorAction Stop | Out-Null
-            DS_WriteLog "I" "Winget has been properly updated and is ready to use." $LogFile
-        }
-        else {
-            DS_WriteLog "I" "Winget are installed." $LogFile
-        }
-    }
-    catch {
-        DS_WriteLog "E" "An error occurred while installing Winget: $_" $LogFile
-    }
+    Install-WingetDependency "https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/Microsoft.VCLibs.x64.14.00.Desktop.appx"
+    Install-WingetDependency "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
+    Install-WingetDependency "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"    
+    winget list --accept-source-agreements -ErrorAction Stop | Out-Null
+    DS_WriteLog "I" "Winget has been properly updated and is ready to use." $LogFile
 }
 
 
@@ -281,7 +270,7 @@ function Install-WingetPackages {
         }
         else {
             DS_WriteLog "I" "Installing $pkg ..." $LogFile
-            Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements --no-upgrade -h" -ErrorAction SilentlyContinue
+            Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements -h" -ErrorAction SilentlyContinue
             
             if ($?) {
                 DS_WriteLog "I" "The package $pkg are installed!" $LogFile
@@ -444,7 +433,7 @@ function Set-IDMFolders {
     $folders = @(, 'Compressed', 'Documents', 'Music', 'Programs', 'Temp', 'Video', 'APK', 'ISO', 'General')  
 
     if (-not(Test-Path $idmDir)) {
-        NDS_CreateDirectory -Directory $idmDir
+        DS_CreateDirectory -Directory $idmDir
         foreach ($folder in $folders) {
             DS_CreateDirectory -Directory $idmDir\$folder
         }
@@ -569,12 +558,12 @@ function Get-Delphi12 {
 Set-ConfigSystem
 Disable-Superfetch
 Set-Wallpaper
+Install-Winget
+Install-WingetPackages
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
 Set-TelegramFolders
-Install-Winget
-Install-WingetPackages
 Add-ExtrasPackages
 Set-LaragonConfiguration
 Get-Delphi12
