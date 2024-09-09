@@ -36,8 +36,7 @@ $PKGS = @(
     "Bitwarden.Bitwarden",
     "voidtools.Everything",
     "Microsoft.PowerShell",
-    "Microsoft.PowerToys",
-    "PowerSoftware.PowerISO",
+    "Microsoft.PowerToys", 
     "RARLab.WinRAR",
     "gerardog.gsudo",
     "arch1t3cht.Aegisub",
@@ -212,7 +211,7 @@ function Set-Ensure-OSCompatibility {
 }
 
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/20775596/pexels-photo-20775596/free-photo-of-mar-panorama-vista-paisagem.jpeg"
+    $wallpaperUrl = "https://images.pexels.com/photos/28298948/pexels-photo-28298948/free-photo-of-estrasburgo-petite-france.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE -ChildPath $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
@@ -371,8 +370,8 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
         DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
         DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
-        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath                
-        DS_InstallOrUninstallSoftware -File $shanaPath -InstallationType "Install" -Arguments ""        
+        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath        
+        Start-Process -FilePath $shanaPath -Wait -NoNewWindow
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
@@ -389,17 +388,18 @@ function Add-ExtrasPackages {
             $filePath = Join-Path $TempDir $fileName
             DownloadFileBitsTransfer -SourceUri $url -DestinationPath $filePath
             DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
-        }
-              
+        }           
+    }
+    else {
+        DS_WriteLog "I" "Shana Encoder already installed. Starting configuration..." $LogFile
         if (Test-Path -Path $presets) {                    
             DS_DeleteDirectory -Directory $presets            
         }        
 
         if (Test-Path -Path $settings) {            
             DS_DeleteDirectory -File $settings
-        }     
-       
-        DS_CreateDirectory -Directory $presets
+        }           
+
         DS_CreateDirectory -Directory "$presets\(Copy)"
         DS_CreateDirectory -Directory "$presets\MP4"     
         DS_CreateDirectory -Directory $settings                  
@@ -408,10 +408,8 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\MP4 SD Dub.xml" -Destination "$presets\MP4"
         DS_CopyFile -SourceFiles "$TempDir\MP4 SD Leg.xml" -Destination "$presets\MP4"
         DS_CopyFile -SourceFiles "$TempDir\Stream Copy to MP4.xml" -Destination "$presets\(Copy)"           
-        DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" -Force        
-    }
-    else {
-        DS_WriteLog "W" "Shana Encoder already installed." $LogFile
+        DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" -Force    
+        DS_WriteLog "S" "Shana Encoder configured succesful." $LogFile
     }
 
     if (-not(Test-Path -Path "C:\Program Files\WinRAR\rarreg.key")) {
@@ -628,4 +626,5 @@ Set-WinRARFolders
 Set-TelegramFolders
 Set-LaragonConfiguration
 Add-ExtrasPackages
+Remove-WindowsDefender
 Exit-Script
