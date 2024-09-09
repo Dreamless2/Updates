@@ -56,6 +56,8 @@ $PKGS = @(
     "QL-Win.QuickLook",
     "MediaArea.MediaInfo.GUI",
     "ArduinoSA.IDE.stable",
+    "FxSoundLLC.FxSound", 
+    "Flameshot.Flameshot",
     "Microsoft.VisualStudio.2022.Enterprise"    
 )
 
@@ -266,14 +268,14 @@ function Install-WingetPackages {
     foreach ($pkg in $PKGS) {
         $installed = Invoke-Expression -Command "winget list $pkg --accept-source-agreements"
         if ($installed -match ([regex]::Escape($pkg))) {
-            DS_WriteLog "W" "$pkg are installed." $LogFile
+            DS_WriteLog "W" "$pkg already installed." $LogFile
         }
         else {
             DS_WriteLog "I" "Installing $pkg ..." $LogFile
             Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements -h" -ErrorAction SilentlyContinue
             
             if ($?) {
-                DS_WriteLog "I" "The package $pkg are installed!" $LogFile
+                DS_WriteLog "I" "The package $pkg already installed!" $LogFile
                 $count++
             }
             else {
@@ -282,7 +284,7 @@ function Install-WingetPackages {
         }
     }
 
-    DS_WriteLog "I" "Packages Installed with Successfully." $LogFile
+    DS_WriteLog "I" "All packages installed." $LogFile
     DS_WriteLog "I" "$count of $($PKGS.Count) packages were installed successfully." $LogFile
 }
 
@@ -294,7 +296,7 @@ function Disable-Superfetch {
 function Add-ExtrasPackages {
     $presets = "C:\ShanaEncoder\presets"
     $settings = "C:\ShanaEncoder\settings" 
-    $shanaUrl = "https://www.videohelp.com/download/ShanaEncoder6.0.1.7.exe"
+    $shanaUrl = "https://sinalbr.dl.sourceforge.net/project/shanaencoder/ShanaEncoder6.0.1.7.exe"
     $codecUrl = "https://file.shana.pe.kr/lib/CodecLibrary.v1.2.x64.7z"
     $regUrl = "https://gist.githubusercontent.com/MuhammadSaim/de84d1ca59952cf1efaa8c061aab81a1/raw/ca31cbda01412e85949810d52d03573af281f826/rarreg.key"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
@@ -308,19 +310,20 @@ function Add-ExtrasPackages {
     $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
     $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
     $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
-    $shanaPath = Join-Path $TempDir $shana
-    $codecsPath = Join-Path $TempDir $codecs  
-    $cnPackPath = Join-Path $TempDir $cnPack    
-    $inviskaPath = Join-Path $TempDir $inviska
-    $qBitTorrentPath = Join-Path $TempDir $qBitTorrent
+    $shanaPath = Join-Path -Path $TempDir -ChildPath $shana
+    $codecsPath = Join-Path -Path $TempDir -ChildPath $codecs  
+    $cnPackPath = Join-Path -Path $TempDir -ChildPath $cnPack    
+    $inviskaPath = Join-Path -Path $TempDir -ChildPath $inviska
+    $qBitTorrentPath = Join-Path -Path $TempDir -ChildPath $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
     if (-not(Test-Path "C:\ShanaEncoder")) {        
+        DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
         DownloadFileBitsTransfer -SourceUri $codecUrl -DestinationPath $codecsPath
-        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath        
-        DS_InstallOrUninstallSoftware -File $shanaPath -Installationtype "Install" -Arguments ""
+        DownloadFileBitsTransfer -SourceUri $shanaUrl -DestinationPath $shanaPath                
+        Start-Process -FilePath $shanaPath -Wait -NoNewWindow
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
@@ -373,8 +376,8 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path "C:\Program Files (x86)\CnPack")) {
         DS_WriteLog "I" "Installing CNPACK Wizard..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath      
-        DS_InstallOrUninstallSoftware -File $cnPackPath -Installationtype "Install" -Arguments ""
+        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath  
+        Start-Process -FilePath $cnPackPath -Wait -NoNewWindow            
     }
     else {
         DS_WriteLog "W" "CnPack already installed." $LogFile
@@ -382,27 +385,26 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath     
-        DS_InstallOrUninstallSoftware -File $qBitTorrentPath -Installationtype "Install" -Arguments "/S"
+        DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath             
+        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S"
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
     }
     
     if (-not(Test-Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
-        DS_WriteLog "I" "Installing Inviska MKV Extract" $LogFile
+        DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
         DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
-        DS_InstallOrUninstallSoftware -File $inviskaPath -Installationtype "Install" -Arguments "" 
+        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
     }
 
     if (-not(Test-Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
-        DS_WriteLog "I" "Downloading JDK Temurin 21" $LogFile
+        DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
         DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath
-        DS_InstallOrUninstallSoftware -File $jdkPath -Installationtype "Install" -Arguments "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome"
-    }
+        Start-Process "msiexec.exe" -ArgumentList "/i ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
     }
@@ -411,7 +413,7 @@ function Add-ExtrasPackages {
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"   
-    DS_WriteLog "I" "Packages installed successfully." $LogFile
+    DS_WriteLog "I" "Packages Installed Successfully." $LogFile
 }
 
 function Set-BitTorrentFolders {
@@ -556,14 +558,14 @@ function Get-Delphi12 {
 # ------------ EXECUÇÃO ------------ #
 
 Set-ConfigSystem
+Install-Winget
+Install-WingetPackages
 Disable-Superfetch
 Set-Wallpaper
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
 Set-TelegramFolders
-Install-Winget
-Install-WingetPackages
 Add-ExtrasPackages
 Set-LaragonConfiguration
 Get-Delphi12
