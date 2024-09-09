@@ -595,6 +595,7 @@ function Invoke-ISOExe {
     Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null   
     DS_WriteLog "S" "Unmounting Image $ISO successfully." $LogFile
 }
+
 function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
     $delphi = [System.IO.Path]::GetFileName($delphiURL)
@@ -612,10 +613,10 @@ function Get-Delphi12 {
 
 Disable-Services
 Set-ConfigSystem
+Get-Delphi12
 Set-Wallpaper
 Install-Winget
 Install-WingetPackages
-Get-Delphi12
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
