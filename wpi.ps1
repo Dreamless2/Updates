@@ -556,10 +556,10 @@ function Get-Delphi12 {
 # ------------ EXECUÇÃO ------------ #
 
 Set-ConfigSystem
-Disable-Superfetch
-Set-Wallpaper
 Install-Winget
 Install-WingetPackages
+Disable-Superfetch
+Set-Wallpaper
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
