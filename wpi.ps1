@@ -599,7 +599,7 @@ function Invoke-ISOExe {
     
     DS_WriteLog "I" "Unmounting Image $ISO" $LogFile
     Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null   
-    DS_WriteLog "S" "Unmounting Image $ISO successfully." $LogFile
+    DS_WriteLog "S" "Unmounting Image $ISO successful." $LogFile
 }
 function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
