@@ -23,8 +23,7 @@ $PKGS = @(
     "Microsoft.VCRedist.2013.x64",
     "Microsoft.VCRedist.2015+.x86",
     "Microsoft.VCRedist.2015+.x64",
-    "Google.Chrome",
-    "Mozilla.Firefox",
+    "Google.Chrome",   
     "Opera.Opera",
     "VideoLAN.VLC",
     "SomePythonThings.WingetUIStore",
@@ -426,8 +425,8 @@ function Add-ExtrasPackages {
 
     if (-not(Test-Path -Path "C:\Program Files (x86)\CnPack")) {
         DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
-        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath  
-        DS_InstallOrUninstallSoftware -File $cnPackPath -InstallationType "Install" -Arguments ""                    
+        DownloadFileBitsTransfer -SourceUri $cnPackUrl -DestinationPath $cnPackPath             
+        Start-Process -FilePath $cnPackPath -Wait -NoNewWindow             
     }
     else {
         DS_WriteLog "W" "CnPack already installed." $LogFile
@@ -436,7 +435,7 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
         DownloadFileBitsTransfer -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath      
-        DS_InstallOrUninstallSoftware -File $qBitTorrentPath -InstallationType "Install" -Arguments "/S"                     
+        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow                     
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
@@ -445,7 +444,7 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
         DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
-        DS_InstallOrUninstallSoftware -File $inviskaUrl -InstallationType "Install" -Arguments ""          
+        Start-Process -FilePath $inviskaUrl -Wait -NoNewWindow        
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
@@ -454,7 +453,7 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
         DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath
-        DS_InstallOrUninstallSoftware -File $qBitTorrentPath -InstallationType "Install" -Arguments "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome"    
+        Start-Process "msiexec" -ArgumentList "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
