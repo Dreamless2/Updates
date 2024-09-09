@@ -294,7 +294,7 @@ function Disable-Superfetch {
 function Add-ExtrasPackages {
     $presets = "C:\ShanaEncoder\presets"
     $settings = "C:\ShanaEncoder\settings" 
-    $shanaUrl = "https://www.videohelp.com/download/ShanaEncoder6.0.1.7.exe"
+    $shanaUrl = "https://sinalbr.dl.sourceforge.net/project/shanaencoder/ShanaEncoder6.0.1.7.exe"
     $codecUrl = "https://file.shana.pe.kr/lib/CodecLibrary.v1.2.x64.7z"
     $regUrl = "https://gist.githubusercontent.com/MuhammadSaim/de84d1ca59952cf1efaa8c061aab81a1/raw/ca31cbda01412e85949810d52d03573af281f826/rarreg.key"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
