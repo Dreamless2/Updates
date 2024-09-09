@@ -444,7 +444,7 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
         DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
-        Start-Process -FilePath $inviskaUrl -Wait -NoNewWindow        
+        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow        
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
@@ -599,7 +599,7 @@ function Invoke-ISOExe {
     
     DS_WriteLog "I" "Unmounting Image $ISO" $LogFile
     Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null   
-    DS_WriteLog "S" "Unmounting Image $ISO successful." $LogFile
+    DS_WriteLog "S" "Unmounting Image $ISO successfully." $LogFile
 }
 function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
@@ -621,11 +621,11 @@ Set-ConfigSystem
 Set-Wallpaper
 Install-Winget
 Install-WingetPackages
+Get-Delphi12
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
 Set-TelegramFolders
-Add-ExtrasPackages
 Set-LaragonConfiguration
-Get-Delphi12
+Add-ExtrasPackages
 Exit-Script
