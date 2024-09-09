@@ -148,12 +148,10 @@ function DownloadFileBitsTransfer {
 }
 
 function Clear-TempFiles {
-    $tempPath = $env:TEMP
-
     try {
-        DS_WriteLog "I" "Clean all files on $tempPath..." $LogFile
+        DS_WriteLog "I" "Clean all files on $TempDir..." $LogFile
 
-        $tempFiles = Get-ChildItem -Path $tempPath -Recurse
+        $tempFiles = Get-ChildItem -Path $TempDir -Recurse
 
         foreach ($file in $tempFiles) {
             try {
@@ -221,7 +219,11 @@ function Set-Wallpaper {
 function Set-ConfigSystem {
     Set-Ensure-Admin
     Set-Ensure-InternetConnection
-    Set-Ensure-OSCompatibility  
+    Set-Ensure-OSCompatibility     
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Control Panel\Keyboard" -RegValueName "PrintScreenKeyForSnippingEnabled" -RegValue "0" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\OneDrive" -RegValueName "KFMBlockOptIn" -RegValue "1" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hkcu:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
 }
 
 # ------------ INSTALAÇÃO DO WINGET ------------ #
@@ -245,7 +247,7 @@ function Install-WingetDependency {
     }
 }
 function Install-Winget {
-    DS_WriteLog "I" "Iniciando o download e instalação do Winget e suas dependências..." $LogFile
+    DS_WriteLog "I" "Starting the download and installation of Winget and its dependencies..." $LogFile
 
     try {
         if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -301,25 +303,28 @@ function Disable-Superfetch {
 }
 
 function Add-ExtrasPackages {
+    $presets = "C:\ShanaEncoder\presets"
+    $settings = "C:\ShanaEncoder\settings" 
     $shanaUrl = "https://www.videohelp.com/download/ShanaEncoder6.0.1.7.exe"
     $codecUrl = "https://file.shana.pe.kr/lib/CodecLibrary.v1.2.x64.7z"
     $regUrl = "https://gist.githubusercontent.com/MuhammadSaim/de84d1ca59952cf1efaa8c061aab81a1/raw/ca31cbda01412e85949810d52d03573af281f826/rarreg.key"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
     $qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.6/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
     $inviskaUrl = "https://www.videohelp.com/download/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
-    $presets = "C:\ShanaEncoder\presets"
-    $settings = "C:\ShanaEncoder\settings" 
+    $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"  
 
     $shana = [System.IO.Path]::GetFileName($shanaUrl)
     $codecs = [System.IO.Path]::GetFileName($codecUrl)
     $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
     $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
     $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
+    $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
     $shanaPath = Join-Path -Path $TempDir -ChildPath $shana
     $codecsPath = Join-Path -Path $TempDir -ChildPath $codecs  
     $cnPackPath = Join-Path -Path $TempDir -ChildPath $cnPack    
     $inviskaPath = Join-Path -Path $TempDir -ChildPath $inviska
     $qBitTorrentPath = Join-Path -Path $TempDir -ChildPath $qBitTorrent
+    $jdkPath = Join-Path $TempDir $jdkName
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
@@ -365,7 +370,7 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" -Force        
     }
     else {
-        DS_WriteLog "W" "Shana Encoder are installed." $LogFile
+        DS_WriteLog "W" "Shana Encoder already installed." $LogFile
     }
 
     if (-not(Test-Path "C:\Program Files\WinRAR\rarreg.key")) {
@@ -374,7 +379,7 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
     }
     else {
-        DS_WriteLog "W" "File Already Exists." $LogFile        
+        DS_WriteLog "W" "Winrar already registered." $LogFile        
     }
 
     if (-not(Test-Path "C:\Program Files (x86)\CnPack")) {
@@ -383,7 +388,7 @@ function Add-ExtrasPackages {
         DS_InstallOrUninstallSoftware -File $cnPackPath -Installationtype "Install" -Arguments ""
     }
     else {
-        DS_WriteLog "W" "CnPack are installed." $LogFile
+        DS_WriteLog "W" "CnPack already installed." $LogFile
     }  
 
     if (-not(Test-Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
@@ -392,7 +397,7 @@ function Add-ExtrasPackages {
         DS_InstallOrUninstallSoftware -File $qBitTorrentPath -Installationtype "Install" -Arguments "/S"
     }
     else {
-        DS_WriteLog "W" "qBitTorrent are installed." $LogFile
+        DS_WriteLog "W" "qBitTorrent already installed." $LogFile
     }
     
     if (-not(Test-Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
@@ -400,8 +405,20 @@ function Add-ExtrasPackages {
         DownloadFileBitsTransfer -SourceUri $inviskaUrl -DestinationPath $inviskaPath
         DS_InstallOrUninstallSoftware -File $inviskaPath -Installationtype "Install" -Arguments "" 
     }
+    else {
+        DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
+    }
 
-    DS_WriteLog "I" "DowNloading QuickLook Plugins" $LogFile
+    if (-not(Test-Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
+        DS_WriteLog "I" "Downloading JDK Temurin 21" $LogFile
+        DownloadFileBitsTransfer -SourceUri $jdkUrl -DestinationPath $jdkPath
+        DS_InstallOrUninstallSoftware -File $jdkPath -Installationtype "Install" -Arguments "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome"
+    }
+    else {
+        DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
+    }
+
+    DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
     DownloadFileBitsTransfer -SourceUri "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadFileBitsTransfer -SourceUri "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"   
