@@ -669,7 +669,6 @@ function Get-Delphi12 {
 
 # ------------ EXECUÇÃO ------------ #
 
-
 Disable-Services
 Set-ConfigSystem
 Set-Wallpaper
@@ -682,5 +681,5 @@ Set-WinRARFolders
 Set-TelegramFolders
 Add-ExtrasPackages
 Set-LaragonConfiguration
+Clear-TempFiles
 Remove-WindowsDefender
-Exit-Script
