@@ -149,7 +149,6 @@ function DownloadFileBitsTransfer {
         DS_WriteLog "E" "An error occurred while downloading $name. Error details: $_.Exception.Message" $LogFile
     }
 }
-
 function DownloadAria2 {
     param (
         [Parameter(Mandatory = $true)]
@@ -169,9 +168,7 @@ function DownloadAria2 {
     if (-not (Test-Path -Path $Aria2ExePath)) {
         DS_WriteLog "E" "Error: aria2 executable not found at $Aria2ExePath." $LogFile
         return
-    }
-
-    $name = [System.IO.Path]::GetFileName($Url)
+    }  
 
     $fileName = [System.IO.Path]::GetFileName($Url)
     $aria2Command = "$Aria2ExePath --conf-path=$Aria2ConfigPath --dir=$DestinationPath --out=$fileName $Url"
@@ -179,9 +176,16 @@ function DownloadAria2 {
     DS_WriteLog "I" "Executing command: $aria2Command" $LogFile
 
     try {
-        $process = Start-Process -FilePath $Aria2ExePath -ArgumentList "--conf-path=$Aria2ConfigPath", "--dir=$DestinationPath", "--out=$fileName", "$Url" -NoNewWindow -PassThru -Wait
+        $arguments = @(
+            "--conf-path=`"$Aria2ConfigPath`"",
+            "--dir=`"$DestinationPath`"",
+            "--out=`"$fileName`"",
+            "`"$Url`""
+        ) -join " "
+
+        $process = Start-Process -FilePath $Aria2ExePath -ArgumentList $arguments -NoNewWindow -PassThru -Wait
         if ($process.ExitCode -eq 0) {
-            DS_WriteLog "I" "File $name downloaded." $LogFile
+            DS_WriteLog "I" "File $fileNamename downloaded." $LogFile
         }
         else {
             DS_WriteLog "E" "Error: Download failed with exit code $($process.ExitCode)." $LogFile
@@ -191,7 +195,6 @@ function DownloadAria2 {
         DS_WriteLog "E" "Error executing aria2 command: $_" $LogFile
     }
 }
-
 function Clear-TempFiles {
     try {
         DS_WriteLog "I" "Clean all files on $TempDir..." $LogFile
@@ -404,7 +407,11 @@ function Add-ExtrasPackages {
         DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
         DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
         DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
-        Start-Process -FilePath $shanaPath -Wait -NoNewWindow
+        Start-Process -FilePath $shanaPath -Wait -NoNewWindow     
+    }
+    else {
+        DS_WriteLog "I" "Shana Encoder already installed. Starting configuration..." $LogFile
+
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
@@ -422,9 +429,6 @@ function Add-ExtrasPackages {
             DownloadFileWebRequest -SourceUri $url -DestinationPath $filePath
             DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
         }           
-    }
-    else {
-        DS_WriteLog "I" "Shana Encoder already installed. Starting configuration..." $LogFile
         if (Test-Path -Path $presets) {                    
             DS_DeleteDirectory -Directory $presets            
         }        
@@ -441,7 +445,7 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\MP4 SD Dub.xml" -Destination "$presets\MP4"
         DS_CopyFile -SourceFiles "$TempDir\MP4 SD Leg.xml" -Destination "$presets\MP4"
         DS_CopyFile -SourceFiles "$TempDir\Stream Copy to MP4.xml" -Destination "$presets\(Copy)"           
-        DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" -Force    
+        DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" 
         DS_WriteLog "S" "Shana Encoder configured succesful." $LogFile
     }
 
@@ -649,12 +653,12 @@ function Get-Delphi12 {
     $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
     $cnPackPath = Join-Path -Path $TempDir $cnPack    
     DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
-    DownloadAria2 -Url $delphiURL -DestinationPath $delphiISOPath
+    DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"
     if (Test-Path $delphiISOPath) {
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
-        if (-not(Test-Path -Path "C:\Program Files (x86)\CnPack")) {
+        if (Test-Path -Path "C:\Program Files (x86)\Embarcadero") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
-            DownloadFileWebRequest -SourceUri $cnPackUrl -DestinationPath $cnPackPath
+            DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
             Start-Process -FilePath $cnPackPath -Wait -NoNewWindow             
         }
         else {
