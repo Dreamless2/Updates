@@ -274,6 +274,13 @@ function Set-ConfigSystem {
     DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
 }
 
+function Set-DarkMode {
+    DS_WriteLog "I" "Setting Dark Mode..." $LogFile
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -RegValueName "AppsUseLightTheme" -RegValue "0" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -RegValueName "SystemUsesLightTheme" -RegValue "0" -Type "DWORD"
+    DS_WriteLog "S" "Dark Mode Activated with success." $LogFile
+}
+
 # ------------ INSTALAÇÃO DO WINGET ------------ #
 
 function Install-WingetDependency {
@@ -669,6 +676,7 @@ function Get-Delphi12 {
 
 # ------------ EXECUÇÃO ------------ #
 
+Set-DarkMode
 Disable-Services
 Set-ConfigSystem
 Set-Wallpaper
