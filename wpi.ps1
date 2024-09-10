@@ -4,6 +4,9 @@ $LogFile = "$env:TEMP\WPI_Log\WPI.log"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -OutFile "$TempDir\aria2.conf"
 Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -OutFile "$TempDir\aria2c.exe"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
+Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -OutFile "$TempDir\Settings.reg"
+Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -OutFile "$TempDir\IDM.reg"
+Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -OutFile "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
@@ -407,6 +410,7 @@ function Add-ExtrasPackages {
     $inviskaPath = Join-Path -Path $TempDir $inviska
     $qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
+    DS_ImportRegistryFile -FileName "$TempDir\IDM.reg"
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
@@ -460,6 +464,7 @@ function Add-ExtrasPackages {
         DS_WriteLog "I" "Registering WinRAR..." $LogFile
         DownloadFileWebRequest -SourceUri $regUrl -DestinationPath $TempDir
         DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
+        DS_ImportRegistryFile -FileName "$TempDir\Settings.reg"
     }
     else {
         DS_WriteLog "W" "Winrar already registered." $LogFile        
@@ -662,6 +667,7 @@ function Get-Delphi12 {
     DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
     DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"
     if (Test-Path $delphiISOPath) {
+        Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
         if (Test-Path -Path "C:\Program Files (x86)\Embarcadero") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
