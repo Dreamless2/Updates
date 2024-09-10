@@ -1,12 +1,12 @@
 $TempDir = $env:TEMP
 $LogFile = "$env:TEMP\WPI_Log\WPI.log"
 
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -OutFile "$TempDir\aria2.conf"
-Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -OutFile "$TempDir\aria2c.exe"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -OutFile "$TempDir\DS_PowerShell_Function_Library.psm1"
-Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -OutFile "$TempDir\Settings.reg"
-Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -OutFile "$TempDir\IDM.reg"
-Invoke-WebRequest -Uri "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -OutFile "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
+Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -Destination $TempDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
+Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $TempDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -Destination $TempDir
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
@@ -28,6 +28,7 @@ $PKGS = @(
     "Microsoft.VCRedist.2013.x64",
     "Microsoft.VCRedist.2015+.x86",
     "Microsoft.VCRedist.2015+.x64",
+    "GeorgieLabs.SoundWireServer",
     "Google.Chrome",   
     "Opera.Opera",
     "VideoLAN.VLC",
@@ -258,7 +259,7 @@ function Set-Ensure-OSCompatibility {
 function Set-Wallpaper {
     $wallpaperUrl = "https://images.pexels.com/photos/28173305/pexels-photo-28173305/free-photo-of-por-do-sol-brilhante-da-cidade-emoldurado-por-edificios.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
-    $wallpaperPath = Join-Path -Path $env:USERPROFILE -ChildPath $wallpaperFileName
+    $wallpaperPath = Join-Path -Path $env:USERPROFILE $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
     DS_SetRegistryValue -RegKeyPath "hkcu:\Control Panel\Desktop" -RegValueName "JPEGImportQuality" -RegValue "100" -Type "DWORD"
     DownloadFileWebRequest -SourceUri $wallpaperUrl -DestinationPath $wallpaperPath
@@ -266,8 +267,11 @@ function Set-Wallpaper {
     Invoke-Expression -Command 'rundll32.exe user32.dll, UpdatePerUserSystemParameters 1, True'
     DS_WriteLog "I" "Customizations applied. Windows Explorer will restart." $LogFile
     Stop-Process -Name explorer -Force ; Start-Process explorer    
+    DS_WriteLog "S" "New wallpaper applied." $LogFile  
+
 }
 function Set-ConfigSystem {
+    DS_WriteLog "I" "Set settings for computer..." $LogFile
     Set-Ensure-Admin
     Set-Ensure-InternetConnection
     Set-Ensure-OSCompatibility     
@@ -275,6 +279,7 @@ function Set-ConfigSystem {
     DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\OneDrive" -RegValueName "KFMBlockOptIn" -RegValue "1" -Type "DWORD"
     DS_SetRegistryValue -RegKeyPath "hkcu:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
     DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
+    DS_WriteLog "S" "Settings done." $LogFile
 }
 
 function Set-DarkMode {
@@ -291,17 +296,17 @@ function Install-WingetDependency {
         [string]$URL
     )
     $PackageName = [System.IO.Path]::GetFileName($URL)
-    $PackagePath = Join-Path -Path $TempDir -ChildPath $PackageName
+    $PackagePath = Join-Path $TempDir $PackageName
     
     try {
         if (-not (Test-Path $PackagePath)) {
             DS_WriteLog "I" "Downloading $PackageName..." $LogFile
-            DownloadFileWebRequest -SourceUri $URL -DestinationPath $PackagePath
+            DownloadAria2 -Url $URL -DestinationPath $TempDir
         }
         Add-AppxPackage -Path $PackagePath -ErrorAction Stop | Out-Null
     }
     catch {
-        DS_WriteLog "E" "Error downloading or installing $PackageName" $LogFile
+        DS_WriteLog "E" "Error downloading or installing $PackageName." $LogFile
     }
 }
 function Install-Winget {
@@ -310,9 +315,8 @@ function Install-Winget {
     Install-WingetDependency "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
     Install-WingetDependency "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"    
     winget list --accept-source-agreements -ErrorAction Stop | Out-Null
-    DS_WriteLog "I" "Winget has been properly updated and is ready to use." $LogFile
+    DS_WriteLog "S" "Winget has been properly updated and is ready to use." $LogFile
 }
-
 
 # ------------ INSTALAÇÃO DOS PACOTES ------------ #
 
@@ -324,14 +328,14 @@ function Install-WingetPackages {
     foreach ($pkg in $PKGS) {
         $installed = Invoke-Expression -Command "winget list $pkg --accept-source-agreements"
         if ($installed -match ([regex]::Escape($pkg))) {
-            DS_WriteLog "W" "$pkg already installed." $LogFile
+            DS_WriteLog "W" "$pkg are installed." $LogFile
         }
         else {
             DS_WriteLog "I" "Installing $pkg ..." $LogFile
             Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements -h" -ErrorAction SilentlyContinue
             
             if ($?) {
-                DS_WriteLog "I" "The package $pkg already installed!" $LogFile
+                DS_WriteLog "I" "The package $pkg are installed!" $LogFile
                 $count++
             }
             else {
@@ -341,7 +345,7 @@ function Install-WingetPackages {
     }
 
     DS_WriteLog "I" "All packages installed." $LogFile
-    DS_WriteLog "I" "$count of $($PKGS.Count) packages were installed successful." $LogFile
+    DS_WriteLog "I" "$count of $($PKGS.Count) packages were installed." $LogFile
 }
 
 function Disable-Services {
@@ -388,9 +392,9 @@ function Remove-WindowsDefender {
     DS_WriteLog "I" "Downloading Windows Defender Removal..." $LogFile
     $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"
     $defenderName = [System.IO.Path]::GetFileName($defenderUrl)
-    $defenderPath = Join-Path $TempDir $defenderName
-    DownloadFileWebRequest -SourceUri $defenderUrl -DestinationPath $defenderPath
-    Start-Process -FilePath $defenderPath -Wait -NoNewWindow
+    $defenderPath = Join-Path -Path $TempDir $defenderName
+    DownloadAria2 -Url $defenderUrl -DestinationPath $TempDir
+    Start-Process -FilePath $defenderPath -NoNewWindow
 }
 
 function Add-ExtrasPackages {
@@ -410,6 +414,7 @@ function Add-ExtrasPackages {
     $inviskaPath = Join-Path -Path $TempDir $inviska
     $qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
+    Stop-Process -ProcessName "idm*"
     DS_ImportRegistryFile -FileName "$TempDir\IDM.reg"
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
@@ -418,10 +423,11 @@ function Add-ExtrasPackages {
         DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
         DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
         DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
-        Start-Process -FilePath $shanaPath -Wait -NoNewWindow     
+        Start-Process -FilePath $shanaPath -Wait -NoNewWindow   
+        DS_WriteLog "S" "ShanaEncoder installed." $LogFile    
     }
     else {
-        DS_WriteLog "I" "Shana Encoder already installed. Starting configuration..." $LogFile
+        DS_WriteLog "I" "ShanaEncoder are installed. Starting configuration..." $LogFile
 
         $xml = @(
             "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
@@ -436,7 +442,7 @@ function Add-ExtrasPackages {
         
         foreach ($url in $cleanUrls) {   
             $fileName = [System.IO.Path]::GetFileName($url)
-            $filePath = Join-Path $TempDir $fileName
+            $filePath = Join-Path -Path $TempDir $fileName
             DownloadFileWebRequest -SourceUri $url -DestinationPath $filePath
             DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
         }           
@@ -457,33 +463,36 @@ function Add-ExtrasPackages {
         DS_CopyFile -SourceFiles "$TempDir\MP4 SD Leg.xml" -Destination "$presets\MP4"
         DS_CopyFile -SourceFiles "$TempDir\Stream Copy to MP4.xml" -Destination "$presets\(Copy)"           
         DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" 
-        DS_WriteLog "S" "Shana Encoder configured succesful." $LogFile
+        DS_WriteLog "S" "ShanaEncoder configured." $LogFile
     }
 
     if (-not(Test-Path -Path "C:\Program Files\WinRAR\rarreg.key")) {
         DS_WriteLog "I" "Registering WinRAR..." $LogFile
-        DownloadFileWebRequest -SourceUri $regUrl -DestinationPath $TempDir
-        DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"
-        DS_ImportRegistryFile -FileName "$TempDir\Settings.reg"
+        DownloadAria2 -Url $regUrl -DestinationPath $TempDir
+        DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"        
+        DS_WriteLog "S" "WinRAR registered." $LogFile  
     }
     else {
-        DS_WriteLog "W" "Winrar already registered." $LogFile        
+        DS_WriteLog "I" "Winrar already registered. Starting configuration..." $LogFile 
+        DS_ImportRegistryFile -FileName "$TempDir\Settings.reg"       
+        DS_WriteLog "W" "Winrar configuration done." $LogFile 
     }    
 
     if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
-        DownloadFileWebRequest -SourceUri $qBitTorrentUrl -DestinationPath $qBitTorrentPath      
-        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow                     
+        DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
+        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow   
+        DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
-    }
-    
+    }    
     
     if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
         DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
-        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow                    
+        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow    
+        DS_WriteLog "S" "Inviska MKV Extract installed sucessful" $LogFile                
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
@@ -492,7 +501,8 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
         DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"    
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
+        DS_WriteLog "S" "JDK Temurin 21 installed sucessful." $LogFile 
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
@@ -508,7 +518,7 @@ function Add-ExtrasPackages {
 
 function Set-BitTorrentFolders {
     $bitTorrent = "D:\BitTorrent"
-    $folders = @(, 'Compressed', 'Documents', 'Logs', 'Music', 'Programs', 'Temp', 'Torrents', 'Video')  
+    $folders = @(, 'Compressed', 'Documents', 'ISO', 'Logs', 'Music', 'Programs', 'Temp', 'Torrents', 'Video')  
 
     if (-not(Test-Path $bitTorrent)) {
         DS_CreateDirectory -Directory $bitTorrent
@@ -600,9 +610,9 @@ function Set-LaragonConfiguration {
     foreach ($key in $downloads.Keys) {
         $file = $downloads[$key]
  
-        if (-not $file.Path) { throw "La ruta para $key cannot be null or empty." }
-        if (-not $file.Url) { throw "La URL para $key cannot be null or empty." }
-        if (-not $file.Destination) { throw "El destino para $key cannot be null or empty." }
+        if (-not $file.Path) { throw "The route for $key cannot be null or empty." }
+        if (-not $file.Url) { throw "The URL for $key cannot be null or empty." }
+        if (-not $file.Destination) { throw "The destiny for $key cannot be null or empty." }
     
         if (!(Test-Path -Path $file.Path)) {      
             DownloadAria2 -Url $file.Url -DestinationPath $TempDir        
@@ -611,7 +621,6 @@ function Set-LaragonConfiguration {
             Expand-Archive -LiteralPath $file.Path -DestinationPath $file.Destination -Force
         }
     }
-
     
     DS_DeleteFile "C:\laragon\bin\apache\-- Win64 VS17  --"
     DS_DeleteFile "C:\laragon\bin\apache\ReadMe.txt"
@@ -659,24 +668,35 @@ function Invoke-ISOExe {
 }
 function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
+    $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
     $delphiName = [System.IO.Path]::GetFileName($delphiURL)
+    $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
     $delphiISOPath = Join-Path "$env:USERPROFILE\Downloads" $delphiName   
+    $w11sdkPath = Join-Path $TempDir $w11sdkName
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
     $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
-    $cnPackPath = Join-Path -Path $TempDir $cnPack    
+    $cnPackPath = Join-Path -Path $TempDir $cnPack   
+    DS_WriteLog "I" "Installing Windows 11 SDK Desktop 64 bits Features..." $LogFile  
+    DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
+    Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
+    DS_WriteLog "I" "Installed Windows 11 SDK Desktop 64 bits Features." $LogFile  
     DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
-    DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"
-    if (Test-Path $delphiISOPath) {
+    DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"   
+    if (Test-Path $delphiISOPath) {        
         Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
-        if (Test-Path -Path "C:\Program Files (x86)\Embarcadero") {
+        if (Test-Path -Path "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
             DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
-            Start-Process -FilePath $cnPackPath -Wait -NoNewWindow             
+            Start-Process -FilePath $cnPackPath -Wait -NoNewWindow   
+            DS_WriteLog "I" "CnPack Wizard instaled." $LogFile          
         }
         else {
             DS_WriteLog "W" "CnPack already installed." $LogFile
         }  
+    }
+    else {
+        DS_WriteLog "I" "Delphi 12.1 installed." $LogFile
     }
 }
 
@@ -696,4 +716,5 @@ Set-TelegramFolders
 Add-ExtrasPackages
 Set-LaragonConfiguration
 Clear-TempFiles
+Read-Host -Prompt "Press any key to continue"
 Remove-WindowsDefender
