@@ -350,7 +350,7 @@ function Install-WingetPackages {
 
 function Disable-Services {
     $services = @(
-        "CertPropSvc"                              # Certificates Propagation Service
+        #"CertPropSvc"                              # Certificates Propagation Service
         "diagnosticshub.standardcollector.service" # Microsoft (R) Diagnostics Hub Standard Collector Service
         "DiagTrack"                                # Diagnostics Tracking Service
         "DPS"                                      # Diagnostic Policies Service
