@@ -350,7 +350,7 @@ function Install-WingetPackages {
 
 function Disable-Services {
     $services = @(
-        #"CertPropSvc"                              # Certificates Propagation Service
+        "CertPropSvc"                              # Certificates Propagation Service
         "diagnosticshub.standardcollector.service" # Microsoft (R) Diagnostics Hub Standard Collector Service
         "DiagTrack"                                # Diagnostics Tracking Service
         "DPS"                                      # Diagnostic Policies Service
@@ -370,8 +370,7 @@ function Disable-Services {
         "SharedAccess"                             # Internet Connection Sharing (ICS)
         "SNMPTRAP"                                 # SNMP Capture Service
         "Spooler"                                  # Print Spooler Service
-        "stisvc"                                   # Windows Image acquisition (WIA) Service
-        "TabletInputService"                       # Handwriting Panel and touch keyboard Service
+        "stisvc"                                   # Windows Image acquisition (WIA) Service        
         "TrkWks"                                   # Distributed Link Tracking Client
         "WbioSrvc"                                 # Windows Biometric Service
         "WlanSvc"                                  # WLAN AutoConfig    
