@@ -61,8 +61,7 @@ $PKGS = @(
     "QL-Win.QuickLook",
     "MediaArea.MediaInfo.GUI",
     "ArduinoSA.IDE.stable",    
-    "Flameshot.Flameshot",
-    "Microsoft.VisualStudio.2022.Enterprise"    
+    "Flameshot.Flameshot"     
 )
 
 # ------------ FUNÇÕES DE SAÍDA ------------ #
