@@ -7,6 +7,7 @@ Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -Destination $TempDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $TempDir
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
@@ -476,6 +477,13 @@ function Add-ExtrasPackages {
         DS_ImportRegistryFile -FileName "$TempDir\Settings.reg"       
         DS_WriteLog "W" "Winrar configuration done." $LogFile 
     }    
+
+    if (Test-Path -Path "C:\Program Files\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
+        DS_WriteLog "I" "Registering Revo Uninstaller Pro..." $LogFile
+        DownloadAria2 -Url $regUrl -DestinationPath $TempDir
+        DS_CopyFile -SourceFiles "$TempDir\revouninstallerpro5.lic" -Destination "$env:ProgramData\VS Revo Group\Revo Uninstaller Pro"        
+        DS_WriteLog "S" "Revo Uninstaller Pro registered." $LogFile  
+    }
 
     if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
