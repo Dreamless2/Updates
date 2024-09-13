@@ -31,6 +31,7 @@ $PKGS = @(
     "Microsoft.VCRedist.2015+.x86",
     "Microsoft.VCRedist.2015+.x64",
     "GeorgieLabs.SoundWireServer",
+    "CrystalRich.LockHunter",
     "Google.Chrome",   
     "Opera.Opera",
     "VideoLAN.VLC",
