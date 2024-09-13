@@ -6,6 +6,7 @@ Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/downl
 Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $TempDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Sysinternals.reg" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $TempDir
 
@@ -415,6 +416,7 @@ function Add-ExtrasPackages {
     $jdkPath = Join-Path $TempDir $jdkName
     Stop-Process -ProcessName "idm*"
     DS_ImportRegistryFile -FileName "$TempDir\IDM.reg"
+    DS_ImportRegistryFile -FileName "$TempDir\Sysinternals.reg"
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
@@ -502,7 +504,7 @@ function Add-ExtrasPackages {
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
-    }    
+    }     
     
     if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
