@@ -687,7 +687,7 @@ function Get-Delphi12 {
     DS_WriteLog "I" "Installing Windows 11 SDK Desktop 64 bits Features..." $LogFile  
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
     Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
-    DS_WriteLog "I" "Installed Windows 11 SDK Desktop 64 bits Features." $LogFile  
+    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
     DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
     DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"   
     if (Test-Path $delphiISOPath) {        
@@ -697,14 +697,14 @@ function Get-Delphi12 {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
             DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
             Start-Process -FilePath $cnPackPath -Wait -NoNewWindow   
-            DS_WriteLog "I" "CnPack Wizard instaled." $LogFile          
+            DS_WriteLog "I" "CnPack Wizard are instaled." $LogFile          
         }
         else {
             DS_WriteLog "W" "CnPack already installed." $LogFile
         }  
     }
     else {
-        DS_WriteLog "I" "Delphi 12.1 installed." $LogFile
+        DS_WriteLog "I" "Delphi 12.1 are installed." $LogFile
     }
 }
 
