@@ -73,6 +73,36 @@ $PKGS = @(
     "Flameshot.Flameshot"     
 )
 
+$presets = "C:\ShanaEncoder\presets"
+$settings = "C:\ShanaEncoder\settings" 
+$downloadsFolderPath = "$env:USERPROFILE\Downloads"
+
+$shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
+$codecUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
+$regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
+$qBitTorrentUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
+$inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
+$jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"    
+$vboxUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/VirtualBox-7.1.0.msi"
+$extpackUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Oracle_VirtualBox_Extension_Pack-7.1.0.vbox-extpack"    
+$pythonUrl = "https://www.python.org/ftp/python/3.12.6/python-3.12.6-amd64.exe"
+
+$shana = [System.IO.Path]::GetFileName($shanaUrl)        
+$inviska = [System.IO.Path]::GetFileName($inviskaUrl)
+$qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
+$jdkName = [System.IO.Path]::GetFileName($jdkUrl)
+$vboxName = [System.IO.Path]::GetFileName($vboxUrl)
+$extpackName = [System.IO.Path]::GetFileName($extpackUrl)
+$pythonName = [System.IO.Path]::GetFileName($pythonUrl)  
+
+$shanaPath = Join-Path -Path $TempDir $shana      
+$inviskaPath = Join-Path -Path $TempDir $inviska
+$qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
+$jdkPath = Join-Path $TempDir $jdkName
+$vboxPath = Join-Path $TempDir $vboxName
+$extpackPath = Join-Path $TempDir $extpackName
+$pythonPath = Join-Path $TempDir $pythonName   
+
 # ------------ FUNÇÕES DE SAÍDA ------------ #
 
 function Exit-Script {
@@ -162,6 +192,8 @@ function DownloadFileBitsTransfer {
         DS_WriteLog "E" "An error occurred while downloading $name. Error details: $_.Exception.Message" $LogFile
     }
 }
+
+# Function to download a file using aria2
 function DownloadAria2 {
     param (
         [Parameter(Mandatory = $true)]
@@ -207,6 +239,46 @@ function DownloadAria2 {
     catch {
         DS_WriteLog "E" "Error executing aria2 command: $_" $LogFile
     }
+}
+# Execute executable from iso
+function Invoke-ISOExe {
+    param (
+        [parameter(Mandatory = $True)]
+        [string] $ISO,  
+        [parameter(Mandatory = $True)]
+        [string] $ExeName,  		
+        [parameter(Mandatory = $False)]
+        [string] $ExeArgs = ""
+    )
+
+    DS_WriteLog "I" "Mounting $ISO" $LogFile
+    Mount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null
+    DS_WriteLog "S" "Mounting Image $ISO successfully." $LogFile
+
+    $driveLetter = (Get-DiskImage $ISO | Get-Volume).DriveLetter   
+
+    if ($driveLetter) {
+        $exeFullPath = "$($driveLetter):\$ExeName"      
+       
+        if (Test-Path $exeFullPath) {
+            if ([string]::IsNullOrEmpty($ExeArgs)) {
+                Start-Process -FilePath $exeFullPath -Wait -NoNewWindow
+            }
+            else {
+                Start-Process -FilePath $exeFullPath -ArgumentList $ExeArgs -Wait -NoNewWindow 
+            }
+        }
+        else {
+            DS_WriteLog "E" "The file '$exeFullPath' not found." $LogFile
+        }
+    }
+    else {
+        DS_WriteLog "E" "Unable to determine the drive letter for the ISO image." $LogFile
+    }
+    
+    DS_WriteLog "I" "Unmounting Image $ISO" $LogFile
+    Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null   
+    DS_WriteLog "S" "Unmounting Image $ISO successfully." $LogFile
 }
 function Clear-TempFiles {
     try {
@@ -264,7 +336,6 @@ function Set-Ensure-OSCompatibility {
         }
     }
 }
-
 function Set-Wallpaper {
     $wallpaperUrl = "https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
@@ -290,7 +361,6 @@ function Set-ConfigSystem {
     DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
     DS_WriteLog "S" "Settings done." $LogFile
 }
-
 function Set-DarkMode {
     DS_WriteLog "I" "Setting Dark Mode..." $LogFile
     DS_SetRegistryValue -RegKeyPath "hkcu:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -RegValueName "AppsUseLightTheme" -RegValue "0" -Type "DWORD"
@@ -315,7 +385,7 @@ function Install-WingetDependency {
         Add-AppxPackage -Path $PackagePath -ErrorAction Stop | Out-Null
     }
     catch {
-        DS_WriteLog "E" "Error downloading or installing $PackageName." $LogFile
+        DS_WriteLog "E" "Error downloading or Starting installation of $PackageName." $LogFile
     }
 }
 function Install-Winget {
@@ -328,7 +398,6 @@ function Install-Winget {
 }
 
 # ------------ INSTALAÇÃO DOS PACOTES ------------ #
-
 function Install-WingetPackages {
     DS_WriteLog "I" "Starting Winget package installation..." $LogFile
 
@@ -340,7 +409,7 @@ function Install-WingetPackages {
             DS_WriteLog "W" "$pkg are installed." $LogFile
         }
         else {
-            DS_WriteLog "I" "Installing $pkg ..." $LogFile
+            DS_WriteLog "I" "Starting installation of $pkg ..." $LogFile
             Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements -h" -ErrorAction SilentlyContinue
             
             if ($?) {
@@ -357,6 +426,7 @@ function Install-WingetPackages {
     DS_WriteLog "I" "$count of $($PKGS.Count) packages were installed." $LogFile
 }
 
+# ------------ DESABILITAR SERVIÇOS DESNECESSÁRIOS ------------ #
 function Disable-Services {
     $services = @(
         "CertPropSvc"                              # Certificates Propagation Service
@@ -396,6 +466,7 @@ function Disable-Services {
     }
 }
 
+# ------------ REMOVER WINDOWS DEFENDER ------------ #
 function Remove-WindowsDefender {
     DS_WriteLog "I" "Downloading Windows Defender Removal..." $LogFile
     $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"
@@ -405,83 +476,13 @@ function Remove-WindowsDefender {
     Start-Process -FilePath $defenderPath -NoNewWindow
 }
 
-function Add-ExtrasPackages {
-    $presets = "C:\ShanaEncoder\presets"
-    $settings = "C:\ShanaEncoder\settings" 
-
-    $shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
-    $codecUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
-    $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
-    $qBitTorrentUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
-    $inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
-    $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"    
-    $vboxUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/VirtualBox-7.1.0.msi"
-    $extpackUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Oracle_VirtualBox_Extension_Pack-7.1.0.vbox-extpack"    
-    $pythonUrl = "https://www.python.org/ftp/python/3.12.6/python-3.12.6-amd64.exe"
-   
-    $shana = [System.IO.Path]::GetFileName($shanaUrl)        
-    $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
-    $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
-    $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
-    $vboxName = [System.IO.Path]::GetFileName($vboxUrl)
-    $extpackName = [System.IO.Path]::GetFileName($extpackUrl)
-    $pythonName = [System.IO.Path]::GetFileName($pythonUrl)    
-   
-    $shanaPath = Join-Path -Path $TempDir $shana      
-    $inviskaPath = Join-Path -Path $TempDir $inviska
-    $qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
-    $jdkPath = Join-Path $TempDir $jdkName
-    $vboxPath = Join-Path $TempDir $vboxName
-    $extpackPath = Join-Path $TempDir $extpackName
-    $pythonPath = Join-Path $TempDir $pythonName   
-
-    DS_WriteLog "I" "Installing Extras Packages" $LogFile
-    
-    if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
-        DS_WriteLog "I" "Downloading Shana Encoder..." $LogFile
-        DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
-        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
-        Start-Process -FilePath $shanaPath -Wait -NoNewWindow   
-        DS_WriteLog "S" "ShanaEncoder installed." $LogFile    
-    }
-    else {
-        DS_WriteLog "I" "ShanaEncoder are installed. Starting configuration..." $LogFile
-
-        $xml = @(
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Dub.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Leg.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/Stream%20Copy%20to%20MP4.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/shanaapp.xml"
-        )
-        
-        $cleanUrls = $xml | ForEach-Object { [uri]::UnescapeDataString($_) }              
-        
-        foreach ($url in $cleanUrls) {   
-            $fileName = [System.IO.Path]::GetFileName($url)
-            $filePath = Join-Path -Path $TempDir $fileName
-            DownloadFileWebRequest -SourceUri $url -DestinationPath $filePath
-            DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
-        }           
-        if (Test-Path -Path $presets) {                    
-            DS_DeleteDirectory -Directory $presets            
-        }        
-
-        if (Test-Path -Path $settings) {            
-            DS_DeleteDirectory -Directory $settings
-        }           
-
-        DS_CreateDirectory -Directory "$presets\(Copy)"
-        DS_CreateDirectory -Directory "$presets\MP4"     
-        DS_CreateDirectory -Directory $settings                  
-        DS_CopyFile -SourceFiles "$TempDir\MP4 HD Dub.xml" -Destination "$presets\MP4"
-        DS_CopyFile -SourceFiles "$TempDir\MP4 HD Leg.xml" -Destination "$presets\MP4"
-        DS_CopyFile -SourceFiles "$TempDir\MP4 SD Dub.xml" -Destination "$presets\MP4"
-        DS_CopyFile -SourceFiles "$TempDir\MP4 SD Leg.xml" -Destination "$presets\MP4"
-        DS_CopyFile -SourceFiles "$TempDir\Stream Copy to MP4.xml" -Destination "$presets\(Copy)"           
-        DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" 
-        DS_WriteLog "S" "ShanaEncoder configured." $LogFile
+# ------------ PACOTES EXTRAS ------------ #
+function Add-ExtrasPackages {  
+    if (Test-Path -Path "$env:ProgramFiles\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
+        DS_WriteLog "I" "Registering Revo Uninstaller Pro..." $LogFile
+        DownloadAria2 -Url $regUrl -DestinationPath $TempDir
+        DS_CopyFile -SourceFiles "$TempDir\revouninstallerpro5.lic" -Destination "$env:ProgramData\VS Revo Group\Revo Uninstaller Pro"        
+        DS_WriteLog "S" "Revo Uninstaller Pro registered." $LogFile  
     }
 
     if (Test-Path -Path "${env:ProgramFiles(x86)}\Internet Download Manager\IDMan.exe") {
@@ -503,80 +504,184 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "Winrar configuration done." $LogFile 
     }    
 
-    if (Test-Path -Path "$env:ProgramFiles\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
-        DS_WriteLog "I" "Registering Revo Uninstaller Pro..." $LogFile
-        DownloadAria2 -Url $regUrl -DestinationPath $TempDir
-        DS_CopyFile -SourceFiles "$TempDir\revouninstallerpro5.lic" -Destination "$env:ProgramData\VS Revo Group\Revo Uninstaller Pro"        
-        DS_WriteLog "S" "Revo Uninstaller Pro registered." $LogFile  
-    }
-
-    if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {
-        DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
-        DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
-        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow   
-        DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
-    }
-    else {
-        DS_WriteLog "W" "qBitTorrent already installed." $LogFile
-    }    
-    
-    if (-not(Test-Path -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
-        DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
-        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
-        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow    
-        DS_WriteLog "S" "Inviska MKV Extract installed sucessful" $LogFile                
-    }
-    else {
-        DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
-    }     
-    
-    if (-not(Test-Path -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
-        DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
-        DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
-        DS_WriteLog "S" "JDK Temurin 21 installed sucessful." $LogFile 
-    }
-    else {
-        DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
-    }    
-
-    if (-not(Test-Path -Path "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe")) {
-        DS_WriteLog "I" "Downloading VirtualBox..." $LogFile
-        DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
-        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $vboxPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
-        DS_WriteLog "S" "VirtualBox are installed." $LogFile    
-    }
-    else {	        
-        DS_WriteLog "I" "VirtualBox are installed. Starting installation of VirtualBox Extension Pack..." $LogFile
-        & "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
-        DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
-    }
-
-    if (-not(Test-Path -Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe")) {    
-        DS_WriteLog "I" "Downloading python..." $LogFile        
-        DownloadAria2 -Url $pythonUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -FileName $pythonPath -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1" -Wait -NoNewWindow
-    }
-    else {
-        DS_WriteLog "S" "Python are installed." $LogFile
-    }
-
     if (Test-Path -Path "$env:LOCALAPPDATA\Microsoft\WindowsApps\streams.exe") {
         DS_WriteLog "I" "Configuring Sysinternals..." $LogFile
         DS_ImportRegistryFile -FileName "$TempDir\Sysinternals.reg"
         DS_WriteLog "I" "Sysinternals are configured." $LogFile
     }
 
-    DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
-    DownloadAria2 -Url "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
-    DownloadAria2 -Url "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
-    DownloadAria2 -Url "https://github.com/emako/QuickLook.Plugin.TorrentViewer/releases/download/v1.0.3/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"    
-    DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
-
-    DS_WriteLog "S" "Packages installed and configured with successful." $LogFile
+    DS_WriteLog "S" "Packages configured with successful." $LogFile
 }
 
+# ------------ PROGRAMAS ------------ #
+function Install-QuickPlugins {
+    DS_WriteLog "I" "Downloading QuickLook Plugins..." $LogFile
+    DownloadAria2 -Url "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath $downloadsFolderPath
+    DownloadAria2 -Url "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath $downloadsFolderPath
+    DownloadAria2 -Url "https://github.com/emako/QuickLook.Plugin.TorrentViewer/releases/download/v1.0.3/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath $downloadsFolderPath    
+    DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
+}
+function Install-Office365 {
+    $officeToolUrl = "https://download.coolhub.top/Office_Tool_Plus/10.14.21.8/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
+    $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
+    $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
+    $officeToolPath = Join-Path $TempDir $officeToolName
+    
+    DS_WriteLog "I" "Starting installation of Office 365..." $LogFile
+    DownloadAria2 -Url $configurationUrl -DestinationPath $downloadsFolderPath
+    DownloadAria2 -Url $officeToolUrl -DestinationPath $TempDir
+    Expand-Archive -LiteralPath $officeToolPath -DestinationPath $TempDir
+    Start-Process -FilePath "$TempDir\Office Tool\Office Tool Plus.exe" -Wait -NoNewWindow
+    DS_WriteLog "S" "Office 365 are installed." $LogFile
+}
+function Install-BitTorrent {
+    DS_WriteLog "I" "Starting installation of qBitTorrent..." $LogFile
+    if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
+        DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
+        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow   
+        DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
+    }
+    else {
+        DS_WriteLog "W" "qBitTorrent already installed." $LogFile
+    }
+}
+function Install-MKVExtractor {
+    DS_WriteLog "I" "Starting installation of Inviska MKV Extract..." $LogFile
+    if (-not(Test-Path -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {              
+        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
+        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow    
+        DS_WriteLog "S" "Inviska MKV Extract installed sucessful" $LogFile                
+    }
+    else {
+        DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
+    }         
+}
+function Install-JDK {
+    DS_WriteLog "I" "Starting installation of JDK Temurin 21..." $LogFile
+    if (-not(Test-Path -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {       
+        DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
+        DS_WriteLog "S" "JDK Temurin 21 installed sucessful." $LogFile 
+    }
+    else {
+        DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
+    }  
+}
+function Install-VirtualBox {
+    DS_WriteLog "I" "Starting installation of VirtualBox..." $LogFile
+    if (-not(Test-Path -Path "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe")) {        
+        DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
+        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $vboxPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
+        DS_WriteLog "S" "VirtualBox are installed." $LogFile    
+    }
+    else {	        
+        DS_WriteLog "I" "VirtualBox are installed. Starting installation of Extension Pack..." $LogFile
+        & "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
+        DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
+    }
+}
+function Install-Python {
+    DS_WriteLog "I" "Starting installation of python..." $LogFile   
+    if (-not(Test-Path -Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe")) {                
+        DownloadAria2 -Url $pythonUrl -DestinationPath $TempDir
+        DS_ExecuteProcess -FileName $pythonPath -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
+    }
+    else {
+        DS_WriteLog "S" "Python are installed." $LogFile
+    }
+}
+function Install-ShanaEncoder {
+    DS_WriteLog "I" "Starting installation of Shana Encoder..." $LogFile
+    if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
+        DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
+        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
+        Start-Process -FilePath $shanaPath -Wait -NoNewWindow   
+        DS_WriteLog "S" "ShanaEncoder installed." $LogFile    
+    }
+}
+function Install-Delphi12 {
+    $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
+    $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
+    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $componentsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/DelphiComponents.zip"
+    $delphiName = [System.IO.Path]::GetFileName($delphiURL)
+    $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
+    $cnPackName = [System.IO.Path]::GetFileName($cnPackUrl)
+    $componentsName = [System.IO.Path]::GetFileName($componentsUrl)
+    $delphiISOPath = Join-Path $downloadsFolderPath $delphiName   
+    $w11sdkPath = Join-Path $TempDir $w11sdkName    
+    $cnPackPath = Join-Path -Path $TempDir $cnPackName   
+    $componentsPath = Join-Path -Path $TempDir $componentsName
+    DS_WriteLog "I" "Starting installation of Windows 11 SDK Desktop 64 bits Features..." $LogFile  
+    DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
+    Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
+    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
+    DS_WriteLog "I" "Starting installation of Delphi 12.1..." $LogFile  
+    DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath   
+    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
+    if (Test-Path $delphiISOPath) {        
+        Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
+        Expand-Archive -LiteralPath $componentsPath -DestinationPath $env:HOMEDRIVE -Force
+        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
+        if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
+            DS_WriteLog "I" "Starting installation of CnPack Wizard..." $LogFile
+            DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
+            Start-Process -FilePath $cnPackPath -Wait -NoNewWindow   
+            DS_WriteLog "I" "CnPack Wizard are instaled." $LogFile          
+        }
+        else {
+            DS_WriteLog "W" "CnPack already installed." $LogFile
+        }  
+    }
+    else {
+        DS_WriteLog "I" "Delphi 12.1 are installed." $LogFile
+    }
+}
+
+# ------------ CONFIGURAÇÕES EXTRAS ------------ #
+function Set-ShanaEncoderConfig {
+    DS_WriteLog "I" "Starting extra configuration..." $LogFile
+      
+    if (Test-Path -Path "C:\ShanaEncoder") { 
+        DS_WriteLog "I" "ShanaEncoder are installed. Starting configuration..." $LogFile  
+        $xml = @(
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Dub.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Leg.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/Stream%20Copy%20to%20MP4.xml",
+            "https://raw.githubusercontent.com/Dreamless2/Updates/main/shanaapp.xml"
+        )
+          
+        $cleanUrls = $xml | ForEach-Object { [uri]::UnescapeDataString($_) }              
+          
+        foreach ($url in $cleanUrls) {   
+            $fileName = [System.IO.Path]::GetFileName($url)
+            $filePath = Join-Path -Path $TempDir $fileName
+            DownloadFileWebRequest -SourceUri $url -DestinationPath $filePath
+            DS_WriteLog "I" "Files Saved on: $filePath" $LogFile     
+        }           
+        if (Test-Path -Path $presets) {                    
+            DS_DeleteDirectory -Directory $presets            
+        }        
+  
+        if (Test-Path -Path $settings) {            
+            DS_DeleteDirectory -Directory $settings
+        }           
+  
+        DS_CreateDirectory -Directory "$presets\(Copy)"
+        DS_CreateDirectory -Directory "$presets\MP4"     
+        DS_CreateDirectory -Directory $settings                  
+        DS_CopyFile -SourceFiles "$TempDir\MP4 HD Dub.xml" -Destination "$presets\MP4"
+        DS_CopyFile -SourceFiles "$TempDir\MP4 HD Leg.xml" -Destination "$presets\MP4"
+        DS_CopyFile -SourceFiles "$TempDir\MP4 SD Dub.xml" -Destination "$presets\MP4"
+        DS_CopyFile -SourceFiles "$TempDir\MP4 SD Leg.xml" -Destination "$presets\MP4"
+        DS_CopyFile -SourceFiles "$TempDir\Stream Copy to MP4.xml" -Destination "$presets\(Copy)"           
+        DS_CopyFile -SourceFiles "$TempDir\shanaapp.xml" -Destination "$settings\shanaapp.xml" 
+        DS_WriteLog "S" "ShanaEncoder configured." $LogFile
+    }
+}
 function Set-BitTorrentFolders {
     $bitTorrent = "D:\BitTorrent"
     $folders = @(, 'Compressed', 'Documents', 'ISO', 'Logs', 'Music', 'Programs', 'Temp', 'Torrents', 'Video')  
@@ -687,84 +792,6 @@ function Set-LaragonConfiguration {
     DS_WriteLog "I" "Laragon configured." $LogFile
 }
 
-function Invoke-ISOExe {
-    param (
-        [parameter(Mandatory = $True)]
-        [string] $ISO,  
-        [parameter(Mandatory = $True)]
-        [string] $ExeName,  		
-        [parameter(Mandatory = $False)]
-        [string] $ExeArgs = ""
-    )
-
-    DS_WriteLog "I" "Mounting $ISO" $LogFile
-    Mount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null
-    DS_WriteLog "S" "Mounting Image $ISO successfully." $LogFile
-
-    $driveLetter = (Get-DiskImage $ISO | Get-Volume).DriveLetter   
-
-    if ($driveLetter) {
-        $exeFullPath = "$($driveLetter):\$ExeName"      
-       
-        if (Test-Path $exeFullPath) {
-            if ([string]::IsNullOrEmpty($ExeArgs)) {
-                Start-Process -FilePath $exeFullPath -Wait -NoNewWindow
-            }
-            else {
-                Start-Process -FilePath $exeFullPath -ArgumentList $ExeArgs -Wait -NoNewWindow 
-            }
-        }
-        else {
-            DS_WriteLog "E" "The file '$exeFullPath' not found." $LogFile
-        }
-    }
-    else {
-        DS_WriteLog "E" "Unable to determine the drive letter for the ISO image." $LogFile
-    }
-    
-    DS_WriteLog "I" "Unmounting Image $ISO" $LogFile
-    Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop | Out-Null   
-    DS_WriteLog "S" "Unmounting Image $ISO successfully." $LogFile
-}
-function Get-Delphi12 {
-    $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
-    $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
-    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
-    $componentsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/DelphiComponents.zip"
-    $delphiName = [System.IO.Path]::GetFileName($delphiURL)
-    $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
-    $cnPackName = [System.IO.Path]::GetFileName($cnPackUrl)
-    $componentsName = [System.IO.Path]::GetFileName($componentsUrl)
-    $delphiISOPath = Join-Path "$env:USERPROFILE\Downloads" $delphiName   
-    $w11sdkPath = Join-Path $TempDir $w11sdkName    
-    $cnPackPath = Join-Path -Path $TempDir $cnPackName   
-    $componentsPath = Join-Path -Path $TempDir $componentsName
-    DS_WriteLog "I" "Installing Windows 11 SDK Desktop 64 bits Features..." $LogFile  
-    DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
-    Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
-    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
-    DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
-    DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"   
-    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
-    if (Test-Path $delphiISOPath) {        
-        Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
-        Expand-Archive -LiteralPath $componentsPath -DestinationPath $env:HOMEDRIVE -Force
-        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
-        if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
-            DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
-            DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
-            Start-Process -FilePath $cnPackPath -Wait -NoNewWindow   
-            DS_WriteLog "I" "CnPack Wizard are instaled." $LogFile          
-        }
-        else {
-            DS_WriteLog "W" "CnPack already installed." $LogFile
-        }  
-    }
-    else {
-        DS_WriteLog "I" "Delphi 12.1 are installed." $LogFile
-    }
-}
-
 # ------------ EXECUÇÃO ------------ #
 
 Set-DarkMode
@@ -773,7 +800,15 @@ Set-ConfigSystem
 Set-Wallpaper
 Install-Winget
 Install-WingetPackages
-Get-Delphi12
+Install-Office365
+InstalL-Delphi12
+Install-ShanaEncoder
+Install-BitTorrent
+Install-MKVExtractor
+Install-JDK
+Install-VirtualBox
+Install-Python
+Install-QuickPlugins
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
