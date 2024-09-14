@@ -1,5 +1,5 @@
-$TempDir = $env:TEMP
-$LogFile = "$env:TEMP\WPI\WPI.log"
+$TempDir = "$env:USERPROFILE\Downloads"
+$LogFile = "$env:USERPROFILE\Downloads\WPI\WPI.log"
 
 Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -Destination $TempDir
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
