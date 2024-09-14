@@ -62,9 +62,7 @@ $PKGS = @(
     "Gyan.FFmpeg",
     "QL-Win.QuickLook",
     "MediaArea.MediaInfo.GUI",
-    "ArduinoSA.IDE.stable",    
-    "PostgreSQL.PostgreSQL.16",
-    "PostgreSQL.pgAdmin",
+    "ArduinoSA.IDE.stable",       
     "OpenJS.NodeJS.LTS",
     "Microsoft.DotNet.SDK.5",
     "Microsoft.DotNet.SDK.6",
@@ -525,8 +523,7 @@ function Install-Office365 {
     $officeToolUrl = "https://download.coolhub.top/Office_Tool_Plus/10.14.21.8/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
-    $officeToolPath = Join-Path $TempDir $officeToolName
-    
+    $officeToolPath = Join-Path $TempDir $officeToolName    
     DS_WriteLog "I" "Starting installation of Office 365..." $LogFile
     DownloadAria2 -Url $configurationUrl -DestinationPath $downloadsFolderPath
     DownloadAria2 -Url $officeToolUrl -DestinationPath $TempDir
@@ -538,7 +535,7 @@ function Install-BitTorrent {
     DS_WriteLog "I" "Starting installation of qBitTorrent..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
         DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
-        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow   
+        DS_InstallOrUninstallSoftware $qBitTorrentPath -Installationtype "Install" -Arguments "/S"  
         DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
     }
     else {
@@ -548,8 +545,8 @@ function Install-BitTorrent {
 function Install-MKVExtractor {
     DS_WriteLog "I" "Starting installation of Inviska MKV Extract..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {              
-        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
-        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow    
+        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir   
+        DS_InstallOrUninstallSoftware $inviskaPath -Installationtype "Install" -Arguments ""
         DS_WriteLog "S" "Inviska MKV Extract installed sucessful" $LogFile                
     }
     else {
@@ -560,7 +557,7 @@ function Install-JDK {
     DS_WriteLog "I" "Starting installation of JDK Temurin 21..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {       
         DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
+        DS_InstallOrUninstallSoftware -File $jdkPath -Installationtype "Install" -Arguments "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome"   
         DS_WriteLog "S" "JDK Temurin 21 installed sucessful." $LogFile 
     }
     else {
@@ -571,8 +568,8 @@ function Install-VirtualBox {
     DS_WriteLog "I" "Starting installation of VirtualBox..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe")) {        
         DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
-        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $vboxPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
+        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir
+        DS_InstallOrUninstallSoftware $vboxPath -Installationtype "Install" -Arguments "ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0"
         DS_WriteLog "S" "VirtualBox are installed." $LogFile    
     }
     else {	        
@@ -585,7 +582,7 @@ function Install-Python {
     DS_WriteLog "I" "Starting installation of python..." $LogFile   
     if (-not(Test-Path -Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe")) {                
         DownloadAria2 -Url $pythonUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -FileName $pythonPath -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
+        DS_InstallOrUninstallSoftware -File $pythonPath -Installationtype "Install" -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
     }
     else {
         DS_WriteLog "S" "Python are installed." $LogFile
@@ -595,8 +592,8 @@ function Install-ShanaEncoder {
     DS_WriteLog "I" "Starting installation of Shana Encoder..." $LogFile
     if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
         DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
-        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
-        Start-Process -FilePath $shanaPath -Wait -NoNewWindow   
+        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir     
+        DS_InstallOrUninstallSoftware -File $shanaPath -Installationtype "Install" -Arguments ""
         DS_WriteLog "S" "ShanaEncoder installed." $LogFile    
     }
 }
@@ -638,6 +635,36 @@ function Install-Delphi12 {
         DS_WriteLog "I" "Delphi 12.1 are installed." $LogFile
     }
 }
+
+function Install-Postgres16 {
+    $odbcUrl = "https://ftp.postgresql.org/pub/odbc/releases/REL-16_00_0005-mimalloc/psqlodbc_x86.msi"  
+    $postgresUrl = "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe" 
+    $odbcName = [System.IO.Path]::GetFileName($odbcUrl)
+    $postgresName = [System.IO.Path]::GetFileName($postgresUrl)
+    $odbcPath = Join-Path $TempDir $odbcName
+    $postgresPath = Join-Path $TempDir $postgresName
+    $locale = "Portuguese, Brazil"
+    $password = "oTRuM5eBdm8VK*kv"
+    $servicename = "postgresql-x64-16"
+    DS_WriteLog "I" "Starting installation PostgreSQL..." $LogFile 
+    DownloadAria2 -Url $odbcUrl -DestinationPath $TempDir
+    DownloadAria2 -Url $postgresUrl -DestinationPath $TempDir
+    DS_InstallOrUninstallSoftware -File $odbcPath -InstallationType "Install" -Arguments ""
+    $arguments = @(
+        "--unattendedmodeui none",
+        "--mode unattended",
+        "--debuglevel 0",
+        "--disable-components stackbuilder",
+        "--install_runtimes 0",
+        "--serverport 5432",
+        "--locale `"$locale`"",
+        "--superpassword `"$password`"",      
+        "--servicename `"$serviceName`""
+    ) -join " "         
+    DS_InstallOrUninstallSoftware -File $postgresPath -InstallationType "Install" -Arguments $arguments
+    DS_WriteLog "S" "PostgreSQL are installed." $LogFile 
+}
+
 
 # ------------ CONFIGURAÇÕES EXTRAS ------------ #
 function Set-ShanaEncoderConfig {
@@ -794,7 +821,7 @@ function Set-LaragonConfiguration {
 
 # ------------ EXECUÇÃO ------------ #
 
-Set-DarkMode
+<#Set-DarkMode
 Disable-Services
 Set-ConfigSystem
 Set-Wallpaper
@@ -817,4 +844,7 @@ Add-ExtrasPackages
 Set-LaragonConfiguration
 Clear-TempFiles
 Read-Host -Prompt "Press any key to continue"
-Remove-WindowsDefender
+Remove-WindowsDefender#>
+
+Install-Python
+Install-MKVExtractor
