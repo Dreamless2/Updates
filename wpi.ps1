@@ -267,7 +267,7 @@ function Set-Ensure-OSCompatibility {
 }
 
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/28173305/pexels-photo-28173305/free-photo-of-por-do-sol-brilhante-da-cidade-emoldurado-por-edificios.jpeg"
+    $wallpaperUrl = "https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
@@ -723,7 +723,7 @@ function Get-Delphi12 {
     DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
     if (Test-Path $delphiISOPath) {        
         Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
-        Expand-Archive -LiteralPath $componentsPath -DestinationPath "$env:HOMEDRIVE" -Force
+        Expand-Archive -LiteralPath $componentsPath -DestinationPath $env:HOMEDRIVE -Force
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
         if (Test-Path -Path "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
