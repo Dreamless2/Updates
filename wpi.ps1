@@ -63,6 +63,13 @@ $PKGS = @(
     "QL-Win.QuickLook",
     "MediaArea.MediaInfo.GUI",
     "ArduinoSA.IDE.stable",    
+    "PostgreSQL.PostgreSQL.16",
+    "PostgreSQL.pgAdmin",
+    "OpenJS.NodeJS.LTS",
+    "Microsoft.DotNet.SDK.5",
+    "Microsoft.DotNet.SDK.6",
+    "Microsoft.DotNet.SDK.7",
+    "Microsoft.DotNet.SDK.8"
     "Flameshot.Flameshot"     
 )
 
@@ -521,20 +528,22 @@ function Add-ExtrasPackages {
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
-    }    
+    }
+    
 
     if (-not(Test-Path -Path "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe")) {
         DS_WriteLog "I" "Downloading VirtualBox..." $LogFile
         DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
         DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
-	DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $vboxPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0"
         DS_WriteLog "S" "VirtualBox are installed." $LogFile    
-    } else {	
-    	DS_WriteLog "I" "VirtualBox are installed. Starting installation of VirtualBox Extension Pack..." $LogFile
-	echo y | "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" extpack install $extpackPath
-	DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
     }
-    
+    else {	        
+        DS_WriteLog "I" "VirtualBox are installed. Starting installation of VirtualBox Extension Pack..." $LogFile
+        & "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
+        DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
+    }
+
     DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
     DownloadAria2 -Url "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadAria2 -Url "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
