@@ -32,7 +32,8 @@ $PKGS = @(
     "Microsoft.VCRedist.2015+.x64",
     "GeorgieLabs.SoundWireServer",
     "CrystalRich.LockHunter",
-    "Google.Chrome",   
+    "Google.Chrome",
+    "Maxthon.Maxthon",
     "Opera.Opera",
     "VideoLAN.VLC",
     "SomePythonThings.WingetUIStore",
@@ -528,14 +529,13 @@ function Add-ExtrasPackages {
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
-    }
-    
+    }    
 
     if (-not(Test-Path -Path "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe")) {
         DS_WriteLog "I" "Downloading VirtualBox..." $LogFile
         DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
         DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0"
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
         DS_WriteLog "S" "VirtualBox are installed." $LogFile    
     }
     else {	        
@@ -635,7 +635,6 @@ function Set-LaragonConfiguration {
     if (-not $notepadplusplus) { throw "notepadplusplus cannot be null or empty." }
     if (-not $nginx) { throw "nginx cannot be null or empty." }
 
-    # Define un diccionario con las URLs, rutas y destinos
     $downloads = @{
         "php"             = @{ "Url" = $php; "Path" = Join-Path $TempDir $phpName; "Destination" = "C:\laragon\bin\php\php8" }
         "apache"          = @{ "Url" = $apache; "Path" = Join-Path $TempDir $apacheName; "Destination" = "C:\laragon\bin\apache" }
@@ -705,12 +704,14 @@ function Invoke-ISOExe {
 function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
     $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
+    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $componentsUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
     $delphiName = [System.IO.Path]::GetFileName($delphiURL)
     $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
+    $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
     $delphiISOPath = Join-Path "$env:USERPROFILE\Downloads" $delphiName   
     $w11sdkPath = Join-Path $TempDir $w11sdkName
-    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
-    $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
+    
     $cnPackPath = Join-Path -Path $TempDir $cnPack   
     DS_WriteLog "I" "Installing Windows 11 SDK Desktop 64 bits Features..." $LogFile  
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
@@ -720,6 +721,7 @@ function Get-Delphi12 {
     DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"   
     if (Test-Path $delphiISOPath) {        
         Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
+        Expand-Archive -LiteralPath $components -DestinationPath "$env:HOMEDRIVE" -Force
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
         if (Test-Path -Path "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
