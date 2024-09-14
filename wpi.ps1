@@ -705,23 +705,25 @@ function Get-Delphi12 {
     $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
     $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
-    $componentsUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
+    $componentsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/DelphiComponents.zip"
     $delphiName = [System.IO.Path]::GetFileName($delphiURL)
     $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
-    $cnPack = [System.IO.Path]::GetFileName($cnPackUrl)
+    $cnPackName = [System.IO.Path]::GetFileName($cnPackUrl)
+    $componentsName = [System.IO.Path]::GetFileName($componentsUrl)
     $delphiISOPath = Join-Path "$env:USERPROFILE\Downloads" $delphiName   
-    $w11sdkPath = Join-Path $TempDir $w11sdkName
-    
-    $cnPackPath = Join-Path -Path $TempDir $cnPack   
+    $w11sdkPath = Join-Path $TempDir $w11sdkName    
+    $cnPackPath = Join-Path -Path $TempDir $cnPackName   
+    $componentsPath = Join-Path -Path $TempDir $componentsName
     DS_WriteLog "I" "Installing Windows 11 SDK Desktop 64 bits Features..." $LogFile  
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
     Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
     DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
     DS_WriteLog "I" "Installing Delphi 12.1..." $LogFile  
     DownloadAria2 -Url $delphiURL -DestinationPath "$env:USERPROFILE\Downloads"   
+    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
     if (Test-Path $delphiISOPath) {        
         Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
-        Expand-Archive -LiteralPath $components -DestinationPath "$env:HOMEDRIVE" -Force
+        Expand-Archive -LiteralPath $componentsPath -DestinationPath "$env:HOMEDRIVE" -Force
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
         if (Test-Path -Path "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
