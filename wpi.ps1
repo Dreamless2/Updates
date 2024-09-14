@@ -50,8 +50,7 @@ $PKGS = @(
     "RARLab.WinRAR",
     "gerardog.gsudo",
     "arch1t3cht.Aegisub",
-    "7zip.7zip",
-    "Python.Python.3.12",
+    "7zip.7zip",    
     "Git.Git",
     "GitHub.cli",
     "Foxit.FoxitReader",    
@@ -70,7 +69,7 @@ $PKGS = @(
     "Microsoft.DotNet.SDK.5",
     "Microsoft.DotNet.SDK.6",
     "Microsoft.DotNet.SDK.7",
-    "Microsoft.DotNet.SDK.8"
+    "Microsoft.DotNet.SDK.8",
     "Flameshot.Flameshot"     
 )
 
@@ -409,6 +408,7 @@ function Remove-WindowsDefender {
 function Add-ExtrasPackages {
     $presets = "C:\ShanaEncoder\presets"
     $settings = "C:\ShanaEncoder\settings" 
+
     $shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
     $codecUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
     $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
@@ -417,21 +417,23 @@ function Add-ExtrasPackages {
     $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"    
     $vboxUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/VirtualBox-7.1.0.msi"
     $extpackUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Oracle_VirtualBox_Extension_Pack-7.1.0.vbox-extpack"    
+    $pythonUrl = "https://www.python.org/ftp/python/3.12.6/python-3.12.6-amd64.exe"
+   
     $shana = [System.IO.Path]::GetFileName($shanaUrl)        
     $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
     $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
     $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
     $vboxName = [System.IO.Path]::GetFileName($vboxUrl)
     $extpackName = [System.IO.Path]::GetFileName($extpackUrl)
+    $pythonName = [System.IO.Path]::GetFileName($pythonUrl)    
+   
     $shanaPath = Join-Path -Path $TempDir $shana      
     $inviskaPath = Join-Path -Path $TempDir $inviska
     $qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
     $vboxPath = Join-Path $TempDir $vboxName
     $extpackPath = Join-Path $TempDir $extpackName
-    Stop-Process -ProcessName "idm*"
-    DS_ImportRegistryFile -FileName "$TempDir\IDM.reg"
-    DS_ImportRegistryFile -FileName "$TempDir\Sysinternals.reg"
+    $pythonPath = Join-Path $TempDir $pythonName   
 
     DS_WriteLog "I" "Installing Extras Packages" $LogFile
     
@@ -482,10 +484,17 @@ function Add-ExtrasPackages {
         DS_WriteLog "S" "ShanaEncoder configured." $LogFile
     }
 
-    if (-not(Test-Path -Path "C:\Program Files\WinRAR\rarreg.key")) {
+    if (Test-Path -Path "${env:ProgramFiles(x86)}\Internet Download Manager\IDMan.exe") {
+        DS_WriteLog "I" "Registering IDM..." $LogFile
+        Stop-Process -ProcessName "idm*"
+        DS_ImportRegistryFile -FileName "$TempDir\IDM.reg"
+        DS_WriteLog "S" "IDM registered." $LogFile 
+    }
+
+    if (-not(Test-Path -Path "$env:ProgramFiles\WinRAR\rarreg.key")) {
         DS_WriteLog "I" "Registering WinRAR..." $LogFile
         DownloadAria2 -Url $regUrl -DestinationPath $TempDir
-        DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "C:\Program Files\WinRAR"        
+        DS_CopyFile -SourceFiles "$TempDir\rarreg.key" -Destination "$env:ProgramFiles\WinRAR"        
         DS_WriteLog "S" "WinRAR registered." $LogFile  
     }
     else {
@@ -494,14 +503,14 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "Winrar configuration done." $LogFile 
     }    
 
-    if (Test-Path -Path "C:\Program Files\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
+    if (Test-Path -Path "$env:ProgramFiles\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
         DS_WriteLog "I" "Registering Revo Uninstaller Pro..." $LogFile
         DownloadAria2 -Url $regUrl -DestinationPath $TempDir
         DS_CopyFile -SourceFiles "$TempDir\revouninstallerpro5.lic" -Destination "$env:ProgramData\VS Revo Group\Revo Uninstaller Pro"        
         DS_WriteLog "S" "Revo Uninstaller Pro registered." $LogFile  
     }
 
-    if (-not(Test-Path -Path "C:\Program Files\qBittorrent\qbittorrent.exe")) {
+    if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {
         DS_WriteLog "I" "Installing qBitTorrent..." $LogFile
         DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
         Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow   
@@ -511,7 +520,7 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
     }    
     
-    if (-not(Test-Path -Path "C:\Program Files\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
+    if (-not(Test-Path -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {        
         DS_WriteLog "I" "Installing Inviska MKV Extract..." $LogFile
         DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
         Start-Process -FilePath $inviskaPath -Wait -NoNewWindow    
@@ -521,7 +530,7 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
     }     
     
-    if (-not(Test-Path -Path "C:\Program Files\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
+    if (-not(Test-Path -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {
         DS_WriteLog "I" "Downloading JDK Temurin 21..." $LogFile
         DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
         DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
@@ -531,25 +540,41 @@ function Add-ExtrasPackages {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
     }    
 
-    if (-not(Test-Path -Path "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe")) {
+    if (-not(Test-Path -Path "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe")) {
         DS_WriteLog "I" "Downloading VirtualBox..." $LogFile
         DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
         DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
-        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $vboxPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
         DS_WriteLog "S" "VirtualBox are installed." $LogFile    
     }
     else {	        
         DS_WriteLog "I" "VirtualBox are installed. Starting installation of VirtualBox Extension Pack..." $LogFile
-        & "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
+        & "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
         DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
+    }
+
+    if (-not(Test-Path -Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe")) {    
+        DS_WriteLog "I" "Downloading python..." $LogFile        
+        DownloadAria2 -Url $pythonUrl -DestinationPath $TempDir
+        DS_ExecuteProcess -FileName $pythonPath -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1" -Wait -NoNewWindow
+    }
+    else {
+        DS_WriteLog "S" "Python are installed." $LogFile
+    }
+
+    if (Test-Path -Path "$env:LOCALAPPDATA\Microsoft\WindowsApps\streams.exe") {
+        DS_WriteLog "I" "Configuring Sysinternals..." $LogFile
+        DS_ImportRegistryFile -FileName "$TempDir\Sysinternals.reg"
+        DS_WriteLog "I" "Sysinternals are configured." $LogFile
     }
 
     DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
     DownloadAria2 -Url "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
     DownloadAria2 -Url "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
-    DownloadAria2 -Url "https://github.com/Cologler/QuickLook.Plugin.TorrentViewer/releases/download/0.2.1/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
+    DownloadAria2 -Url "https://github.com/emako/QuickLook.Plugin.TorrentViewer/releases/download/v1.0.3/QuickLook.Plugin.TorrentViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"    
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
-    DS_WriteLog "S" "Packages Installed successful." $LogFile
+
+    DS_WriteLog "S" "Packages installed and configured with successful." $LogFile
 }
 
 function Set-BitTorrentFolders {
@@ -725,7 +750,7 @@ function Get-Delphi12 {
         Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
         Expand-Archive -LiteralPath $componentsPath -DestinationPath $env:HOMEDRIVE -Force
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
-        if (Test-Path -Path "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin") {
+        if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Installing CnPack Wizard..." $LogFile
             DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
             Start-Process -FilePath $cnPackPath -Wait -NoNewWindow   
