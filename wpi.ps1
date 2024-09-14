@@ -406,15 +406,21 @@ function Add-ExtrasPackages {
     $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
     $qBitTorrentUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/qbittorrent_4.6.6_lt20_qt6_x64_setup.exe"
     $inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
-    $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"      
+    $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"    
+    $vboxUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/VirtualBox-7.1.0.msi"
+    $extpackUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Oracle_VirtualBox_Extension_Pack-7.1.0.vbox-extpack"    
     $shana = [System.IO.Path]::GetFileName($shanaUrl)        
     $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
     $qBitTorrent = [System.IO.Path]::GetFileName($qBitTorrentUrl)
     $jdkName = [System.IO.Path]::GetFileName($jdkUrl)
+    $vboxName = [System.IO.Path]::GetFileName($vboxUrl)
+    $extpackName = [System.IO.Path]::GetFileName($extpackUrl)
     $shanaPath = Join-Path -Path $TempDir $shana      
     $inviskaPath = Join-Path -Path $TempDir $inviska
     $qBitTorrentPath = Join-Path -Path $TempDir $qBitTorrent
     $jdkPath = Join-Path $TempDir $jdkName
+    $vboxPath = Join-Path $TempDir $vboxName
+    $extpackPath = Join-Path $TempDir $extpackName
     Stop-Process -ProcessName "idm*"
     DS_ImportRegistryFile -FileName "$TempDir\IDM.reg"
     DS_ImportRegistryFile -FileName "$TempDir\Sysinternals.reg"
@@ -516,6 +522,18 @@ function Add-ExtrasPackages {
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
     }    
+
+    if (-not(Test-Path -Path "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe")) {
+        DS_WriteLog "I" "Downloading VirtualBox..." $LogFile
+        DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
+        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
+	  DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0
+        DS_WriteLog "S" "VirtualBox are installed." $LogFile    
+} else {	
+	 DS_WriteLog "I" "VirtualBox are installed. Starting installation of VirtualBox Extension Pack..." $LogFile
+	 echo y | "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" extpack install $extpackPath
+	 DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
+}
 
     DS_WriteLog "I" "Downloading QuickLook Plugins" $LogFile
     DownloadAria2 -Url "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -DestinationPath "$env:USERPROFILE\Downloads"
