@@ -536,7 +536,7 @@ function Install-BitTorrent {
     if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
         DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
         DS_ExecuteProcess -Filename $qBitTorrentPath -Arguments "/S"  
-        DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
+        DS_WriteLog "S" "qBitTorrent are installed sucessful." $LogFile                   
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
@@ -547,7 +547,7 @@ function Install-MKVExtractor {
     if (-not(Test-Path -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {              
         DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir   
         Start-Process -FilePath $inviskaPath -Wait -NoNewWindow
-        DS_WriteLog "S" "Inviska MKV Extract installed sucessful" $LogFile                
+        DS_WriteLog "S" "Inviska MKV Extract are installed sucessful." $LogFile                
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
@@ -558,7 +558,7 @@ function Install-JDK {
     if (-not(Test-Path -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {       
         DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
         DS_ExecuteProcess -Filename "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
-        DS_WriteLog "S" "JDK Temurin 21 installed sucessful." $LogFile 
+        DS_WriteLog "S" "JDK Temurin 21 are installed sucessful." $LogFile 
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
