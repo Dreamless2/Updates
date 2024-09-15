@@ -558,7 +558,7 @@ function Install-Office365 {
     DS_WriteLog "I" "Starting installation of Office 365..." $LogFile
     DownloadAria2 -Url $configurationUrl -DestinationPath $downloadsFolderPath
     DownloadAria2 -Url $officeToolUrl -DestinationPath $TempDir
-    Expand-Archive -LiteralPath $officeToolPath -DestinationPath $TempDir
+    Expand-Archive -LiteralPath $officeToolPath -DestinationPath $TempDir -Force
     Start-Process -FilePath "$TempDir\Office Tool\Office Tool Plus.exe" -Wait -NoNewWindow
     DS_WriteLog "S" "Office 365 are installed." $LogFile
 }
