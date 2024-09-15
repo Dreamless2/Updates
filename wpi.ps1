@@ -364,8 +364,9 @@ function Set-Ensure-OSCompatibility {
         }
     }
 }
+
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg"
+    $wallpaperUrl = "https://images.pexels.com/photos/1036657/pexels-photo-1036657.jpeg"    
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
@@ -376,8 +377,8 @@ function Set-Wallpaper {
     DS_WriteLog "I" "Customizations applied. Windows Explorer will restart." $LogFile
     Stop-Process -Name explorer -Force ; Start-Process explorer    
     DS_WriteLog "S" "New wallpaper applied." $LogFile  
-
 }
+
 function Set-ConfigSystem {
     DS_WriteLog "I" "Set settings for computer..." $LogFile
     Set-Ensure-Admin
@@ -641,16 +642,16 @@ function Install-Delphi12 {
     $w11sdkPath = Join-Path $TempDir $w11sdkName    
     $cnPackPath = Join-Path -Path $TempDir $cnPackName   
     $componentsPath = Join-Path -Path $TempDir $componentsName
+    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
+    Expand-Archive -LiteralPath $componentsPath -DestinationPath $env:HOMEDRIVE -Force
     DS_WriteLog "I" "Starting installation of Windows 11 SDK Desktop 64 bits Features..." $LogFile  
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
     Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
     DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
     DS_WriteLog "I" "Starting installation of Delphi 12.1..." $LogFile  
-    DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath   
-    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
+    DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath      
     if (Test-Path $delphiISOPath) {        
-        Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
-        Expand-Archive -LiteralPath $componentsPath -DestinationPath $env:HOMEDRIVE -Force
+        Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"        
         Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
         if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Starting installation of CnPack Wizard..." $LogFile
@@ -860,7 +861,7 @@ Set-Wallpaper
 Install-Winget
 Install-WingetPackages
 Install-Office365
-InstalL-Delphi12
+Install-Delphi12
 Install-ShanaEncoder
 Install-BitTorrent
 Install-MKVExtractor
