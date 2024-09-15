@@ -1,17 +1,47 @@
 $TempDir = $env:TEMP
-$LogFile = "$env:TEMP\WPI\WPI.log"
+$LogFile = "$TempDir\WPI\WPI.log"
+$aria2c = "$TempDir\aria2c.exe"
+$aria2conf = "$TempDir\aria2.conf"
+$settings = "$TempDir\Settings.reg"
+$idm = "$TempDir\IDM.reg"
+$sysinternals = "$TempDir\Sysinternals.reg"
+$radstudioPatch = "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
+$revoLic = "$TempDir\revouninstallerpro5.lic"
 
-Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -Destination $TempDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
-Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $TempDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Sysinternals.reg" -Destination $TempDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -Destination $TempDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $TempDir
+if (-not(Test-Path -Path $aria2c)) {
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
+}
+
+if (-not(Test-Path -Path $aria2conf)) {
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -Destination $TempDir
+}
+
+if (-not(Test-Path -Path $settings)) {
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
+}
+
+if (-not(Test-Path -Path $idm)) {
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $TempDir
+}
+
+if (-not(Test-Path -Path $sysinternals)) {
+
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Sysinternals.reg" -Destination $TempDir
+}
+
+if (-not(Test-Path -Path $radstudioPatch)) {
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -Destination $TempDir
+}
+
+if (-not(Test-Path -Path $revoLic)) {
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $TempDir
+}
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
+}
+else {
+    Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 }
 
 # ------------ VARIÁVEIS ------------ #
@@ -335,7 +365,7 @@ function Set-Ensure-OSCompatibility {
     }
 }
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/1036657/pexels-photo-1036657.jpeg"
+    $wallpaperUrl = "https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
@@ -520,23 +550,24 @@ function Install-QuickPlugins {
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
 }
 function Install-Office365 {
-    $officeToolUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Office_Tool_with_runtime_v10.14.21.8_x64.zip"  
+    $officeToolUrl = "https://download.coolhub.top/Office_Tool_Plus/10.14.21.8/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
-    $officeToolPath = Join-Path $TempDir $officeToolName    
+    $officeToolPath = Join-Path $TempDir $officeToolName
+    
     DS_WriteLog "I" "Starting installation of Office 365..." $LogFile
     DownloadAria2 -Url $configurationUrl -DestinationPath $downloadsFolderPath
     DownloadAria2 -Url $officeToolUrl -DestinationPath $TempDir
     Expand-Archive -LiteralPath $officeToolPath -DestinationPath $TempDir
     Start-Process -FilePath "$TempDir\Office Tool\Office Tool Plus.exe" -Wait -NoNewWindow
-    DS_WriteLog "S" "Office 365 are installed succesful." $LogFile
+    DS_WriteLog "S" "Office 365 are installed." $LogFile
 }
 function Install-BitTorrent {
     DS_WriteLog "I" "Starting installation of qBitTorrent..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
         DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -Filename $qBitTorrentPath -Arguments "/S"  
-        DS_WriteLog "S" "qBitTorrent are installed sucessful." $LogFile                   
+        Start-Process -FilePath $qBitTorrentPath -ArgumentList "/S" -Wait -NoNewWindow   
+        DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
     }
     else {
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
@@ -545,9 +576,9 @@ function Install-BitTorrent {
 function Install-MKVExtractor {
     DS_WriteLog "I" "Starting installation of Inviska MKV Extract..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {              
-        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir   
-        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow
-        DS_WriteLog "S" "Inviska MKV Extract are installed sucessful." $LogFile                
+        DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
+        Start-Process -FilePath $inviskaPath -Wait -NoNewWindow    
+        DS_WriteLog "S" "Inviska MKV Extract installed sucessful" $LogFile                
     }
     else {
         DS_WriteLog "W" "Inviska MKV Extract already installed." $LogFile
@@ -557,8 +588,8 @@ function Install-JDK {
     DS_WriteLog "I" "Starting installation of JDK Temurin 21..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.4.7-hotspot\bin\javac.exe")) {       
         DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -Filename "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
-        DS_WriteLog "S" "JDK Temurin 21 are installed sucessful." $LogFile 
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $jdkPath ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet"   
+        DS_WriteLog "S" "JDK Temurin 21 installed sucessful." $LogFile 
     }
     else {
         DS_WriteLog "W" "JDK Temurin 21 already installed." $LogFile
@@ -568,32 +599,32 @@ function Install-VirtualBox {
     DS_WriteLog "I" "Starting installation of VirtualBox..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe")) {        
         DownloadAria2 -Url $vboxUrl -DestinationPath $TempDir
-        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -Filename $vboxPath -Arguments "ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0"
-        DS_WriteLog "S" "VirtualBox are installed succesful." $LogFile    
+        DownloadAria2 -Url $extpackUrl -DestinationPath $TempDir      
+        DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $vboxPath ADDLOCAL=VBoxApplication,VBoxUSB,VBoxNetworkFlt NETWORKTYPE=NDIS6 VBOX_INSTALLDESKTOPSHORTCUT=1 VBOX_INSTALLQUICKLAUNCHSHORTCUT=0 VBOX_REGISTERFILEEXTENSIONS=1 VBOX_START=0 /qn /norestart"
+        DS_WriteLog "S" "VirtualBox are installed." $LogFile    
     }
     else {	        
         DS_WriteLog "I" "VirtualBox are installed. Starting installation of Extension Pack..." $LogFile
         & "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
-        DS_WriteLog "S" "VirtualBox Extension Pack are installed succesful." $LogFile
+        DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
     }
 }
 function Install-Python {
     DS_WriteLog "I" "Starting installation of python..." $LogFile   
     if (-not(Test-Path -Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe")) {                
         DownloadAria2 -Url $pythonUrl -DestinationPath $TempDir
-        DS_ExecuteProcess -Filename $pythonPath -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
+        DS_ExecuteProcess -FileName $pythonPath -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
     }
     else {
-        DS_WriteLog "S" "Python are installed succesful." $LogFile
+        DS_WriteLog "S" "Python are installed." $LogFile
     }
 }
 function Install-ShanaEncoder {
     DS_WriteLog "I" "Starting installation of Shana Encoder..." $LogFile
     if (-not(Test-Path -Path "C:\ShanaEncoder")) {        
         DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
-        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir 
-        Start-Process -FilePath $shanaPath -Wait -NoNewWindow
+        DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir      
+        Start-Process -FilePath $shanaPath -Wait -NoNewWindow   
         DS_WriteLog "S" "ShanaEncoder installed." $LogFile    
     }
 }
@@ -612,8 +643,8 @@ function Install-Delphi12 {
     $componentsPath = Join-Path -Path $TempDir $componentsName
     DS_WriteLog "I" "Starting installation of Windows 11 SDK Desktop 64 bits Features..." $LogFile  
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
-    DS_ExecuteProcess -Filename $w11sdkPath -Arguments "/features OptionId.DesktopCPPx64 /quiet /norestart"
-    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed succesful." $LogFile  
+    Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
+    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
     DS_WriteLog "I" "Starting installation of Delphi 12.1..." $LogFile  
     DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath   
     DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
@@ -632,7 +663,7 @@ function Install-Delphi12 {
         }  
     }
     else {
-        DS_WriteLog "I" "Delphi 12.1 are installed succesful." $LogFile
+        DS_WriteLog "I" "Delphi 12.1 are installed." $LogFile
     }
 }
 
@@ -649,22 +680,23 @@ function Install-Postgres16 {
     DS_WriteLog "I" "Starting installation PostgreSQL..." $LogFile 
     DownloadAria2 -Url $odbcUrl -DestinationPath $TempDir
     DownloadAria2 -Url $postgresUrl -DestinationPath $TempDir
-    DS_ExecuteProcess -Filename "msiexec" -Arguments "/i $odbcPath /qn /norestart"
+    DS_Installation
+    DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $odbcPath /qn /norestart"
     $arguments = @(
         "--unattendedmodeui none",
-        "--mode unattended",
+        "--mode none",
         "--debuglevel 0",
         "--disable-components stackbuilder",
         "--install_runtimes 0",
-        "--serverport 5432",
+        "--port 5432",
         "--locale `"$locale`"",
         "--superpassword `"$password`"",      
         "--servicename `"$serviceName`""
-    ) -join " "      
-    DS_ExecuteProcess -Filename $postgresPath -Arguments $arguments
-    DS_WriteLog "S" "PostgreSQL are installed succesful." $LogFile 
+    )
+    DS_ExecuteProcess -FileName $postgresPath -Arguments $arguments     
+    DS_Installation
+    DS_WriteLog "S" "PostgreSQL are installed." $LogFile 
 }
-
 
 # ------------ CONFIGURAÇÕES EXTRAS ------------ #
 function Set-ShanaEncoderConfig {
@@ -828,7 +860,7 @@ Set-Wallpaper
 Install-Winget
 Install-WingetPackages
 Install-Office365
-Install-Delphi12
+InstalL-Delphi12
 Install-ShanaEncoder
 Install-BitTorrent
 Install-MKVExtractor
