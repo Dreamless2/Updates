@@ -335,7 +335,7 @@ function Set-Ensure-OSCompatibility {
     }
 }
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/789380/pexels-photo-789380.jpeg"
+    $wallpaperUrl = "https://images.pexels.com/photos/1036657/pexels-photo-1036657.jpeg"
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
     $wallpaperPath = Join-Path -Path $env:USERPROFILE $wallpaperFileName
     DS_WriteLog "I" "Applying new wallpaper..." $LogFile
@@ -520,7 +520,7 @@ function Install-QuickPlugins {
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
 }
 function Install-Office365 {
-    $officeToolUrl = "https://download.coolhub.top/Office_Tool_Plus/10.14.21.8/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
+    $officeToolUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Office_Tool_with_runtime_v10.14.21.8_x64.zip"  
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
     $officeToolPath = Join-Path $TempDir $officeToolName    
