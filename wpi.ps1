@@ -605,7 +605,7 @@ function Install-VirtualBox {
     }
     else {	        
         DS_WriteLog "I" "VirtualBox are installed. Starting installation of Extension Pack..." $LogFile
-        & "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license
+        & "$env:ProgramFiles\Oracle\VirtualBox\VBoxManage.exe" extpack install --replace $extpackPath --accept-license=eb31505e56e9b4d0fbca139104da41ac6f6b98f8e78968bdf01b1f3da3c4f9ae
         DS_WriteLog "S" "VirtualBox Extension Pack are installed." $LogFile
     }
 }
@@ -873,6 +873,7 @@ Set-IDMFolders
 Set-WinRARFolders
 Set-TelegramFolders
 Add-ExtrasPackages
+Set-ShanaEncoderConfig
 Set-LaragonConfiguration
 Clear-TempFiles
 Read-Host -Prompt "Press any key to continue"
