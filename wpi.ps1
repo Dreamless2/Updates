@@ -5,8 +5,10 @@ $aria2conf = "$TempDir\aria2.conf"
 $settings = "$TempDir\Settings.reg"
 $idm = "$TempDir\IDM.reg"
 $sysinternals = "$TempDir\Sysinternals.reg"
-$radstudioPatch = "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"
+$radstudioPatch = "$TempDir\KeyPatch.exe"
 $revoLic = "$TempDir\revouninstallerpro5.lic"
+
+Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 
 if (-not(Test-Path -Path $aria2c)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
@@ -30,7 +32,7 @@ if (-not(Test-Path -Path $sysinternals)) {
 }
 
 if (-not(Test-Path -Path $radstudioPatch)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/RADStudio-12-1-29-0-51961-7529-KeyPatch.exe" -Destination $TempDir
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/KeyPatch.exe" -Destination $TempDir
 }
 
 if (-not(Test-Path -Path $revoLic)) {
@@ -39,9 +41,6 @@ if (-not(Test-Path -Path $revoLic)) {
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
-}
-else {
-    Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 }
 
 # ------------ VARIÁVEIS ------------ #
@@ -630,7 +629,7 @@ function Install-ShanaEncoder {
     }
 }
 function Install-Delphi12 {
-    $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_1_61_7529.iso"    
+    $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_2_9782_9961F.iso"    
     $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
     $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.3.1.1181_20240404/CnWizards_1.3.1.1181.exe"
     $componentsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/DelphiComponents.zip"
@@ -648,7 +647,7 @@ function Install-Delphi12 {
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
     Start-Process -FilePath $w11sdkPath -ArgumentList "/features OptionId.DesktopCPPx64 /quiet /norestart" -Wait -NoNewWindow
     DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
-    DS_WriteLog "I" "Starting installation of Delphi 12.1..." $LogFile  
+    DS_WriteLog "I" "Starting installation of Delphi 12.2..." $LogFile  
     DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath      
     if (Test-Path $delphiISOPath) {        
         Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"        
@@ -681,21 +680,19 @@ function Install-Postgres16 {
     DS_WriteLog "I" "Starting installation PostgreSQL..." $LogFile 
     DownloadAria2 -Url $odbcUrl -DestinationPath $TempDir
     DownloadAria2 -Url $postgresUrl -DestinationPath $TempDir
-    DS_Installation
     DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $odbcPath /qn /norestart"
     $arguments = @(
         "--unattendedmodeui none",
-        "--mode none",
+        "--mode unattended",
         "--debuglevel 0",
         "--disable-components stackbuilder",
         "--install_runtimes 0",
-        "--port 5432",
+        "--serverport 5432",
         "--locale `"$locale`"",
         "--superpassword `"$password`"",      
         "--servicename `"$serviceName`""
-    )
+    ) -join " "
     DS_ExecuteProcess -FileName $postgresPath -Arguments $arguments     
-    DS_Installation
     DS_WriteLog "S" "PostgreSQL are installed." $LogFile 
 }
 
@@ -785,7 +782,6 @@ function Set-WinRARFolders {
         DS_WriteLog "W" "Folders already exists." $LogFile
     }
 }
-
 function Set-TelegramFolders {
     $kotatogramDir = "D:\Kotatogram Desktop"
     $telegramDir = "D:\Telegram Desktop"
@@ -869,6 +865,7 @@ Install-JDK
 Install-VirtualBox
 Install-Python
 Install-QuickPlugins
+Install-Postgres16
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
