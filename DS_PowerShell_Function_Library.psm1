@@ -38,6 +38,7 @@
 #       -DS_DeleteDirectory                   -> Delete a directory
 #       -DS_DeleteFile                        -> Delete a file
 #       -DS_RenameItem                        -> Rename a file or registry value
+#       -DS_ExpandArchive                     -> Expand a zip file 
 #     -Firewall
 #       -DS_CreateFirewallRule                -> Create a new local firewall rule (using NetSh for W2K8R2 and PowerShell for newer operating systems)
 #     -Installations and executables
@@ -68,6 +69,8 @@
 #       -DS_GetAllScheduledTaskSubFolders     -> Only to be used in combination with the function DS_DeleteScheduledTask
 #       -DS_ReassignDriveLetter               -> Reassign a drive letter to a different letter
 #       -DS_RenameVolumeLabel                 -> Rename a volume label
+#       -DS_ClearPrefetchFolder               -> Clear a prefetch folder
+#       -DS_StartStopProcess                  -> Start and stop a process     
 # -Citrix functions
 #     -Provisioning Server
 #       -DS_CreatePVSAuthGroup                -> Create a new Provisioning Server authorization group
@@ -1011,6 +1014,7 @@ Function DS_ExecuteProcess {
     }
 }
 
+
 #==========================================================================
 
 # FUNCTION DS_InstallOrUninstallSoftware
@@ -1050,13 +1054,16 @@ Function DS_InstallOrUninstallSoftware {
         [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
         DS_WriteLog "I" "START FUNCTION - $FunctionName" $LogFile
     }
-    
+
     process {
-        $FileName = ($File.Split("\"))[-1]
-        $FileExt = $FileName.SubString(($FileName.Length) - 3, 3)
+        $FileName = [System.IO.Path]::GetFileName($File)
+        $FileExt = $FileName.SubString(($FileName.Length) - 3, 3)    
  
         # Prepare variables
-        if (!( $FileExt -eq "MSI") ) { $FileExt = "SETUP" }
+        if (-not($FileExt -eq "MSI")) { 
+            $FileExt = "SETUP" 
+        }
+
         if ($Installationtype -eq "Uninstall" ) {
             $Result1 = "uninstalled"
             $Result2 = "uninstallation"
@@ -2463,6 +2470,66 @@ Function DS_ClearPrefetchFolder {
 
     end {
         DS_WriteLog "I" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+
+Function DS_StartStopProcess {
+    <#
+        .SYNOPSIS
+        Start or stop a process.
+        .DESCRIPTION
+        This function starts or stops a specified process based on the given action.
+        .PARAMETER ProcessName
+        The name of the process to start or stop.
+        .PARAMETER Action
+        Defines whether to 'Start' or 'Stop' the process.
+        .EXAMPLE
+        DS_StartStopProcess -ProcessName "notepad" -Action "Start"
+        Starts the notepad process.
+        .EXAMPLE
+        DS_StartStopProcess -ProcessName "notepad" -Action "Stop"
+        Stops the notepad process.
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)][string]$ProcessName,
+        [Parameter(Mandatory = $true)][ValidateSet('Start', 'Stop')][string]$Action
+    )
+
+    begin {
+        # Start function logging
+        DS_WriteLog "I" "START FUNCTION - DS_StartStopProcesss" $LogFile
+        DS_WriteLog "I" "Process Name: $ProcessName" $LogFile
+        DS_WriteLog "I" "Action: $Action" $LogFile
+    }
+
+    process {
+        try {
+            if ($Action -eq "Start") {
+                # Start the process
+                DS_WriteLog "I" "Starting process $ProcessName" $LogFile
+                Start-Process -FilePath $ProcessName -ErrorAction Stop
+                DS_WriteLog "S" "Process $ProcessName started successfully." $LogFile
+            }
+            elseif ($Action -eq "Stop") {
+                # Stop the process
+                $Process = Get-Process -Name $ProcessName -ErrorAction Stop
+                if ($Process) {
+                    DS_WriteLog "I" "Stopping process $ProcessName" $LogFile
+                    Stop-Process -Name $ProcessName -Force -ErrorAction Stop
+                    DS_WriteLog "S" "Process $ProcessName stopped successfully." $LogFile
+                }
+            }
+        }
+        catch {
+            DS_WriteLog "E" "Error during $Action of process $ProcessName. Error: $_" $LogFile
+            throw
+        }
+    }
+
+    end {
+        DS_WriteLog "I" "END FUNCTION - Start-StopProcess" $LogFile
     }
 }
 
