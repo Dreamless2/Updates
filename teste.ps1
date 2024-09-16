@@ -2,7 +2,9 @@ $TempDir = "$env:TEMP"
 
 Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/blob/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 
-Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
+if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
+    Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
+}
 
 DS_ClearPrefetchFolder
 
