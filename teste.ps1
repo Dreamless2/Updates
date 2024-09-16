@@ -1,6 +1,6 @@
 $TempDir = "$env:TEMP"
 
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/blob/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
+Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 
 if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
