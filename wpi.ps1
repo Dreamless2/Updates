@@ -655,8 +655,8 @@ function Install-Delphi12 {
     DS_WriteLog "I" "Starting installation of Delphi 12.2..." $LogFile  
     DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath      
     if (Test-Path $delphiISOPath) {        
-        Start-Process -FilePath "$TempDir\RADStudio-12-1-29-0-51961-7529-KeyPatch.exe"        
-        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_117529a.exe"
+        Start-Process -FilePath "$TempDir\KeyPatch.exe"        
+        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_119782a.exe"
         if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog "I" "Starting installation of CnPack Wizard..." $LogFile
             DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
