@@ -556,7 +556,7 @@ function Install-QuickPlugins {
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
 }
 function Install-Office365 {
-    $officeToolUrl = "https://download.coolhub.top/Office_Tool_Plus/10.14.21.8/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
+    $officeToolUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
     $officeToolPath = Join-Path $TempDir $officeToolName    
