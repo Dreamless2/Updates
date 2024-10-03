@@ -133,8 +133,8 @@ Function DS_BindCertificateToIISPort {
     param (
         [Parameter(Mandatory = $True)]
         [string]$URL,
-        [Parameter(Mandatory = $True)]
-        [int]$Port = 443
+        [Parameter(Mandatory = $False)]
+        [int]$Port
     )
 
     begin {
@@ -143,6 +143,11 @@ Function DS_BindCertificateToIISPort {
     }
 
     process {
+        # Define default value for Port if not provided
+        if (-not $Port) {
+            $Port = 443
+        }
+        
         # Import the PowerShell module 'WebAdministration' for IIS
         try {
             Import-Module WebAdministration
@@ -154,10 +159,10 @@ Function DS_BindCertificateToIISPort {
 
         # Retrieve the domain name of the host base URL
         if ( $URL.StartsWith("http") ) {
-            [string]$Domain = ([System.URI]$URL).host                                     # Retrieve the domain name from the URL. For example: if the host base URL is "http://apps.mydomain.com/folder/", using the data type [System.URI] and the property "host", the resulting value would be "www.mydomain.com"
+            [string]$Domain = ([System.URI]$URL).host                                     
         }
         else {
-            [string]$Domain = $URL                                                        # Retrieve the domain name from the URL. For example: if the host base URL is "http://apps.mydomain.com/folder/", using the data type [System.URI] and the property "host", the resulting value would be "www.mydomain.com"
+            [string]$Domain = $URL                                                        
         }
 
         # Retrieve the certificate hash value
@@ -175,11 +180,10 @@ Function DS_BindCertificateToIISPort {
             Exit 1
         }
 
-        #  Check the hash value. In case it does not exist, try to see if perhaps a wildcard certificate or SAN certificate is installed
         if ( !($Hash) ) {
             DS_WriteLog "I" "A hash value for a certificate with the subject name '$Domain' could not be retrieved. You may be using a wildcard or a SAN certificate" $LogFile
-            [string[]]$Domain = $Domain.Split(".")                                         # Split the domain name on the dot (.)
-            [string]$Domain = "$($Domain[-2]).$($Domain[-1])"                              # Read the last two items in the newly created array to retrieve the root level domain name (in our example this would be "mydomain.com")
+            [string[]]$Domain = $Domain.Split(".")                                         
+            [string]$Domain = "$($Domain[-2]).$($Domain[-1])"                              
             DS_WriteLog "I" "Let's try to retrieve the hash value for a certificate with the domain name '*.$($Domain)'" $LogFile
             try {
                 $Hash = (Get-ChildItem cert:\LocalMachine\My | where-object { $_.Subject -match "\*.$($Domain)" } | Select-Object -First 1).Thumbprint
@@ -212,11 +216,12 @@ Function DS_BindCertificateToIISPort {
             Exit 1
         }
     }
- 
+
     end {
         DS_WriteLog "I" "END FUNCTION - $FunctionName" $LogFile
     }
 }
+
 #==========================================================================
 
 # Function DS_InstallCertificate
@@ -523,7 +528,8 @@ Function DS_ExpandArchive {
             if ($Overwrite) {
                 DS_WriteLog "I" "Expanding archive '$SourceFile' to '$DestinationPath' with overwrite enabled" $LogFile
                 Expand-Archive -Path $SourceFile -DestinationPath $DestinationPath -Force
-            } else {
+            }
+            else {
                 DS_WriteLog "I" "Expanding archive '$SourceFile' to '$DestinationPath' without overwriting" $LogFile
                 Expand-Archive -Path $SourceFile -DestinationPath $DestinationPath
             }
