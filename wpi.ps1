@@ -1,4 +1,4 @@
-﻿$TempDir = $env:TEMP
+$TempDir = $env:TEMP
 $LogFile = "$TempDir\WPI\WPI.log"
 $aria2c = "$TempDir\aria2c.exe"
 $aria2conf = "$TempDir\aria2.conf"
@@ -107,12 +107,12 @@ $downloadsFolderPath = "$env:USERPROFILE\Downloads"
 $shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
 $codecUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
 $regUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
-$qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.7/qbittorrent_4.6.7_lt20_qt6_x64_setup.exe"
+$qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-5.0.0/qbittorrent_5.0.0_lt20_qt6_x64_setup.exe"
 $inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
 $jdkUrl = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.4_7.msi"    
-$vboxUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/VirtualBox-7.1.0.msi"
-$extpackUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Oracle_VirtualBox_Extension_Pack-7.1.0.vbox-extpack"    
-$pythonUrl = "https://www.python.org/ftp/python/3.12.6/python-3.12.6-amd64.exe"
+$vboxUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/VirtualBox-7.1.2.msi"
+$extpackUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Oracle_VirtualBox_Extension_Pack-7.1.2.vbox-extpack"    
+$pythonUrl = "https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe"
 
 $shana = [System.IO.Path]::GetFileName($shanaUrl)        
 $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
@@ -384,13 +384,47 @@ function Set-ConfigSystem {
     DS_ClearPrefetchFolder
     Set-Ensure-Admin
     Set-Ensure-InternetConnection
-    Set-Ensure-OSCompatibility     
+    Set-Ensure-OSCompatibility   
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
     DS_SetRegistryValue -RegKeyPath "hkcu:\Control Panel\Keyboard" -RegValueName "PrintScreenKeyForSnippingEnabled" -RegValue "0" -Type "DWORD"
     DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\OneDrive" -RegValueName "KFMBlockOptIn" -RegValue "1" -Type "DWORD"
     DS_SetRegistryValue -RegKeyPath "hkcu:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
-    DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"   
+    DS_SetRegistryValue -RegKeyPath "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -RegValueName "DisableSnippingTool" -RegValue "1" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments" -RegValueName "SaveZoneInformation" -RegValue "1" -Type "DWORD" 
+    DS_SetRegistryValue -RegKeyPath "hkcu:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -RegValueName "SilentInstalledAppsEnabled" -RegValue "0" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hklm:\SYSTEM\CurrentControlSet\Control\BitLocker" -RegValueName "PreventDeviceEncryption" -RegValue "1" -Type "DWORD"
+    DS_SetRegistryValue -RegKeyPath "hklm:\SYSTEM\CurrentControlSet\Control\FileSystem" -RegValueName "LongPathsEnabled" -RegValue "1" -Type "DWORD"   
     DS_WriteLog "S" "Settings done." $LogFile
 }
+
+function Set-PowerOptions {
+    DS_WriteLog "I" "Power configuration..." $LogFile
+    Invoke-Expression -Command "powercfg /h off"
+    Invoke-Expression -Command "powercfg /s e9a42b02-d5df-448d-aa00-03f14749eb61"
+    Invoke-Expression -Command "powercfg /x standby-timeout-ac 0"
+    Invoke-Expression -Command "powercfg /x disk-timeout-ac 0"
+    Invoke-Expression -Command "powercfg /x monitor-timeout-ac 40"
+    Invoke-Expression -Command "powercfg /SETACVALUEINDEX SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0"
+    Invoke-Expression -Command "fsutil.exe behavior set disableLastAccess 1"
+    Invoke-Expression -Command "fsutil behavior set disable8dot3 1"
+    DS_WriteLog "S" "Settings done." $LogFile
+}
+
+function Set-NetworkPrivate {
+    if (1, 3, 4, 5 -contains (Get-WmiObject win32_computersystem).DomainRole) { 
+        return 
+    }
+
+    $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}"))
+    $connections = $networkListManager.GetNetworkConnections()
+
+    $connections | ForEach-Object {
+        Write-Host $_.GetNetwork().GetName()"category was previously set to"$_.GetNetwork().GetCategory()
+        $_.GetNetwork().SetCategory(1)
+        Write-Host $_.GetNetwork().GetName()"changed to category"$_.GetNetwork().GetCategory()
+    }
+}
+
 function Set-DarkMode {
     DS_WriteLog "I" "Setting Dark Mode..." $LogFile
     DS_SetRegistryValue -RegKeyPath "hkcu:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -RegValueName "AppsUseLightTheme" -RegValue "0" -Type "DWORD"
@@ -400,21 +434,76 @@ function Set-DarkMode {
 
 # ------------ INSTALAÇÃO DO WINGET ------------ #
 
-function Install-Winget {
-    DS_WriteLog "I" "Starting downloading and configuration of winget..." $LogFile 
-    Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
-    Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx -OutFile Microsoft.VCLibs.x64.14.00.Desktop.appx
-    Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx -OutFile Microsoft.UI.Xaml.2.8.x64.appx
-    Invoke-WebRequest -Uri https://winget.azureedge.net/cache/source.msix -OutFile source.msix
-    Add-AppxPackage Microsoft.VCLibs.x64.14.00.Desktop.appx
-    Add-AppxPackage Microsoft.UI.Xaml.2.8.x64.appx
-    Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
-    Add-AppxPackage source.msix
-    winget list --accept-source-agreements -ErrorAction Stop | Out-Null
-    DS_WriteLog "S" "Winget has been properly updated and is ready to use." $LogFile
+function Add-Winget {
+    Write-Cyan "Iniciando o download e instalação do Winget e suas dependências..."
+
+    # Fazer o download dos 3 arquivos manualmente economiza MUITO tempo! 
+    # De qualquer forma, o script faz o download automático dos arquivos caso não sejam encontrados na pasta Downloads.
+    $VCLibsURL = "https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/Microsoft.VCLibs.x64.14.00.Desktop.appx"
+    $UIXamlURL = "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
+    $WingetURL = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    $SourcesUrl = " https://winget.azureedge.net/cache/source.msix"
+
+    $VCLibsPKG = $VCLibsURL.Split('/')[-1]
+    $UIXamlPKG = $UIXamlURL.Split('/')[-1]
+    $WingetPKG = $WingetURL.Split('/')[-1]
+    $SourcesPKG = $SourcesUrl.Split('/')[-1]
+    
+    $VCLibsPath = Join-Path -Path $downloadsFolderPath -ChildPath $VCLibsPKG
+    $UIXamlPath = Join-Path -Path $downloadsFolderPath -ChildPath $UIXamlPKG
+    $WingetPath = Join-Path -Path $downloadsFolderPath -ChildPath $WingetPKG
+    $SourcesPath = Join-Path -Path $downloadsFolderPath -ChildPath $SourcesPKG
+    
+    try {
+        if (-not (Test-Path $VCLibsPath)) {
+            Write-Cyan "Downloading $($VCLibsPKG). Wait a moment..."
+            Invoke-WebRequest $VCLibsURL -OutFile (Join-Path -Path $TempDir -ChildPath $VCLibsPKG) -ErrorAction Stop | Out-Null
+            Add-AppxPackage -Path (Join-Path -Path $TempDir -ChildPath $VCLibsPKG) -ErrorAction Stop | Out-Null
+        }
+        else {
+            Add-AppxPackage -Path $VCLibsPath -ErrorAction Stop | Out-Null
+        }
+        
+        if (-not (Test-Path $UIXamlPath)) {
+            Write-Cyan "Downloading $($UIXamlPKG). Wait a moment..."
+            Invoke-WebRequest $UIXamlURL -OutFile (Join-Path -Path $TempDir -ChildPath $UIXamlPKG) -ErrorAction Stop | Out-Null
+            Add-AppxPackage -Path (Join-Path -Path $TempDir -ChildPath $UIXamlPKG) -ErrorAction Stop | Out-Null
+        }
+        else {
+            Add-AppxPackage -Path $UIXamlPath -ErrorAction Stop | Out-Null
+        }
+        
+        if (-not (Test-Path $WingetPath)) {
+            Write-Cyan "Downloading $($WingetPKG). Wait a moment..."
+            Invoke-WebRequest $WingetURL -OutFile (Join-Path -Path $TempDir -ChildPath $WingetPKG) -ErrorAction Stop | Out-Null
+            Add-AppxPackage -Path (Join-Path -Path $TempDir -ChildPath $WingetPKG) -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+        }
+        else {
+            Add-AppxPackage -Path $WingetPath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+        }
+
+        if (-not (Test-Path $SourcesPath)) {
+            Write-Cyan "Downloading $($SourcesPKG). Wait a moment..."
+            Invoke-WebRequest $SourcesUrl -OutFile (Join-Path -Path $TempDir -ChildPath $SourcesPKG) -ErrorAction Stop | Out-Null
+            Add-AppxPackage -Path (Join-Path -Path $TempDir -ChildPath $SourcesPKG) -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+        }
+        else {
+            Add-AppxPackage -Path $SourcesPath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+        }
+        
+        Invoke-Expression -Command "echo y | winget list --accept-source-agreements" -ErrorAction Stop | Out-Null
+        
+        Write-Green "Winget has been properly updated and is ready to use."
+    }
+    catch {
+        return 1
+    }
+    
+    return 0
 }
 
 # ------------ INSTALAÇÃO DOS PACOTES ------------ #
+
 function Install-WingetPackages {
     DS_WriteLog "I" "Starting winget package installation..." $LogFile
 
@@ -539,7 +628,7 @@ function Install-QuickPlugins {
     DS_WriteLog "S" "Plugins QuickLook downloaded successful." $LogFile
 }
 function Install-Office365 {
-    $officeToolUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Office_Tool_with_runtime_v10.14.21.8_x64.zip"   
+    $officeToolUrl = "https://github.com/YerongAI/Office-Tool/releases/download/v10.14.28.0/Office_Tool_with_runtime_v10.14.28.0_x64.zip"   
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
     $officeToolPath = Join-Path $TempDir $officeToolName    
@@ -547,17 +636,22 @@ function Install-Office365 {
     DownloadAria2 -Url $configurationUrl -DestinationPath $downloadsFolderPath
     DownloadAria2 -Url $officeToolUrl -DestinationPath $TempDir
     DS_ExpandArchive -SourceFile $officeToolPath -DestinationPath $TempDir -Overwrite $true
+    Invoke-RestMethod https://get.activated.win | Invoke-Expression
     DS_ExecuteProcess -FileName "$TempDir\Office Tool\Office Tool Plus.exe"
     DS_WriteLog "S" "Office 365 are installed." $LogFile
 }
 function Install-BitTorrent {
     DS_WriteLog "I" "Starting installation of qBitTorrent..." $LogFile
     if (-not(Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
-        DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir
+        DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir        
         DS_InstallOrUninstallSoftware -File $qBitTorrentPath -Installationtype "Install" -Arguments "/S"
         DS_WriteLog "S" "qBitTorrent installed." $LogFile                   
     }
-    else {
+    
+    if (Test-Path -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe") {    
+        DS_WriteLog "I" "Starting configuration of qBitTorrent..." $LogFile
+        DownloadAria2 -Url "https://github.com/Dreamless2/Updates/releases/download/youpdates/qt.conf" -DestinationPath $TempDir
+        DS_CopyFile -SourceFiles "$TempDir\qt.conf" -Destination "$env:ProgramFiles\qBittorrent"          
         DS_WriteLog "W" "qBitTorrent already installed." $LogFile
     }
 }
@@ -615,78 +709,8 @@ function Install-ShanaEncoder {
         DS_InstallOrUninstallSoftware -File $shanaPath -Installationtype "Install" -Arguments ""  
         DS_WriteLog "S" "ShanaEncoder installed." $LogFile    
     }
-}
-function Install-Delphi12 {
-    $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_2_9782_9961F.iso"    
-    $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
-    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.5.0.1209_20240917/CnWizards_1.5.0.1209.exe"
-    $componentsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/DelphiComponents.zip"
-    $delphiName = [System.IO.Path]::GetFileName($delphiURL)
-    $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
-    $cnPackName = [System.IO.Path]::GetFileName($cnPackUrl)
-    $componentsName = [System.IO.Path]::GetFileName($componentsUrl)
-    $delphiISOPath = Join-Path $downloadsFolderPath $delphiName   
-    $w11sdkPath = Join-Path $TempDir $w11sdkName    
-    $cnPackPath = Join-Path -Path $TempDir $cnPackName   
-    $componentsPath = Join-Path -Path $TempDir $componentsName
-    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
-    DS_ExpandArchive -SourceFile $componentsPath -DestinationPath $downloadsFolderPath -Overwrite $true
-    DS_WriteLog "I" "Starting installation of Windows 11 SDK Desktop 64 bits Features..." $LogFile  
-    DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
-    DS_InstallOrUninstallSoftware -File $w11sdkPath -Installationtype "Install" -Arguments "/features OptionId.DesktopCPPx64 /quiet /norestart"
-    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
-    DS_WriteLog "I" "Starting installation of Delphi 12.2..." $LogFile  
-    DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath      
-    if (Test-Path $delphiISOPath) {        
-        Start-Process -FilePath "$TempDir\KeyPatch.exe"        
-        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_119782a.exe"
-        if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
-            DS_WriteLog "I" "Starting installation of CnPack Wizard..." $LogFile
-            DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
-            DS_InstallOrUninstallSoftware -File $cnPackPath -Installationtype "Install" -Arguments ""
-            DS_WriteLog "I" "CnPack Wizard are instaled." $LogFile          
-        }
-        else {
-            DS_WriteLog "W" "CnPack already installed." $LogFile
-        }  
-    }
-    else {
-        DS_WriteLog "I" "Delphi 12.1 are installed." $LogFile
-    }
-}
 
-function Install-Postgres16 {
-    $odbcUrl = "https://ftp.postgresql.org/pub/odbc/releases/REL-16_00_0005-mimalloc/psqlodbc_x86.msi"  
-    $postgresUrl = "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe" 
-    $odbcName = [System.IO.Path]::GetFileName($odbcUrl)
-    $postgresName = [System.IO.Path]::GetFileName($postgresUrl)
-    $odbcPath = Join-Path $TempDir $odbcName
-    $postgresPath = Join-Path $TempDir $postgresName
-    $locale = "Portuguese, Brazil"
-    $password = "oTRuM5eBdm8VK*kv"
-    $servicename = "postgresql-x64-16"
-    DS_WriteLog "I" "Starting installation PostgreSQL..." $LogFile 
-    DownloadAria2 -Url $odbcUrl -DestinationPath $TempDir
-    DownloadAria2 -Url $postgresUrl -DestinationPath $TempDir
-    DS_InstallOrUninstallSoftware -File $odbcPath -Installationtype "Install" -Arguments ""
-    $arguments = @(
-        "--unattendedmodeui none",
-        "--mode unattended",
-        "--debuglevel 0",
-        "--disable-components stackbuilder",
-        "--install_runtimes 0",
-        "--serverport 5432",
-        "--locale `"$locale`"",
-        "--superpassword `"$password`"",      
-        "--servicename `"$serviceName`""
-    ) -join " "
-    DS_InstallOrUninstallSoftware -File $postgresPath -Installationtype "Install" -Arguments $arguments     
-    DS_WriteLog "S" "PostgreSQL are installed." $LogFile 
-}
-
-# ------------ CONFIGURAÇÕES EXTRAS ------------ #
-function Set-ShanaEncoderConfig {
-    DS_WriteLog "I" "Starting extra configuration..." $LogFile
+    DS_WriteLog "I" "Starting Shana Encoder configuration..." $LogFile
       
     if (Test-Path -Path "C:\ShanaEncoder") { 
         DS_WriteLog "I" "ShanaEncoder are installed. Starting configuration..." $LogFile  
@@ -727,6 +751,75 @@ function Set-ShanaEncoderConfig {
         DS_WriteLog "S" "ShanaEncoder configured." $LogFile
     }
 }
+function Install-Delphi12 {
+    $delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_2_9782_9961F.iso"    
+    $w11sdkUrl = "https://download.microsoft.com/download/2/6/f/26f7aa55-ef6f-4882-b19b-a1be0e7328fe/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
+    $cnPackUrl = "https://github.com/cnpack/cnwizards/releases/download/CNWIZARDS_1.5.0.1209_20240917/CnWizards_1.5.0.1209.exe"
+    $componentsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/DelphiComponents.zip"
+    $delphiName = [System.IO.Path]::GetFileName($delphiURL)
+    $w11sdkName = [System.IO.Path]::GetFileName($w11sdkUrl)
+    $cnPackName = [System.IO.Path]::GetFileName($cnPackUrl)
+    $componentsName = [System.IO.Path]::GetFileName($componentsUrl)
+    $delphiISOPath = Join-Path $downloadsFolderPath $delphiName   
+    $w11sdkPath = Join-Path $TempDir $w11sdkName    
+    $cnPackPath = Join-Path -Path $TempDir $cnPackName   
+    $componentsPath = Join-Path -Path $TempDir $componentsName
+    DownloadAria2 -Url $componentsUrl -DestinationPath $TempDir
+    DS_ExpandArchive -SourceFile $componentsPath -DestinationPath $downloadsFolderPath -Overwrite $true
+    DS_WriteLog "I" "Starting installation of Windows 11 SDK Desktop 64 bits Features..." $LogFile  
+    DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
+    DS_InstallOrUninstallSoftware -File $w11sdkPath -Installationtype "Install" -Arguments "/features OptionId.DesktopCPPx64 /quiet /norestart"
+    DS_WriteLog "I" "Windows 11 SDK Desktop 64 bits Features are installed." $LogFile  
+    DS_WriteLog "I" "Starting installation of Delphi 12.2..." $LogFile  
+    DownloadAria2 -Url $delphiURL -DestinationPath $downloadsFolderPath      
+    if (Test-Path $delphiISOPath) {        
+        Start-Process -FilePath "$TempDir\KeyPatch.exe"        
+        Invoke-ISOExe -ISO $delphiISOPath -ExeName "radstudio_12_esd_119782a.exe"
+        if (Test-Path -Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
+            DS_WriteLog "I" "Starting installation of CnPack Wizard..." $LogFile
+            DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
+            DS_InstallOrUninstallSoftware -File $cnPackPath -Installationtype "Install" -Arguments ""
+            DS_WriteLog "I" "CnPack Wizard are instaled." $LogFile          
+        }
+        else {
+            DS_WriteLog "W" "CnPack already installed." $LogFile
+        }  
+    }
+    else {
+        DS_WriteLog "I" "Delphi 12.2 are installed." $LogFile
+    }
+}
+
+function Install-Postgres {
+    $odbcUrl = "https://www.postgresql.org/ftp/odbc/releases/REL-17_00_0002-mimalloc/psqlodbc_x86.msi"  
+    $postgresUrl = "https://get.enterprisedb.com/postgresql/postgresql-17.0-1-windows-x64.exe" 
+    $odbcName = [System.IO.Path]::GetFileName($odbcUrl)
+    $postgresName = [System.IO.Path]::GetFileName($postgresUrl)
+    $odbcPath = Join-Path $TempDir $odbcName
+    $postgresPath = Join-Path $TempDir $postgresName
+    $locale = "Portuguese, Brazil"
+    $password = "oTRuM5eBdm8VK*kv"
+    $servicename = "postgresql-x64-17"
+    DS_WriteLog "I" "Starting installation PostgreSQL..." $LogFile 
+    DownloadAria2 -Url $odbcUrl -DestinationPath $TempDir
+    DownloadAria2 -Url $postgresUrl -DestinationPath $TempDir
+    DS_InstallOrUninstallSoftware -File $odbcPath -Installationtype "Install" -Arguments ""
+    $arguments = @(
+        "--unattendedmodeui none",
+        "--mode unattended",
+        "--debuglevel 0",
+        "--disable-components stackbuilder",
+        "--install_runtimes 0",
+        "--serverport 5432",
+        "--locale `"$locale`"",
+        "--superpassword `"$password`"",      
+        "--servicename `"$serviceName`""
+    ) -join " "
+    DS_InstallOrUninstallSoftware -File $postgresPath -Installationtype "Install" -Arguments $arguments     
+    DS_WriteLog "S" "PostgreSQL are installed." $LogFile 
+}
+
+# ------------ CONFIGURAÇÕES EXTRAS ------------ #
 function Set-BitTorrentFolders {
     $bitTorrent = "D:\BitTorrent"
     $folders = @(, 'Compressed', 'Documents', 'ISO', 'Logs', 'Music', 'Programs', 'Temp', 'Torrents', 'Video')  
@@ -777,7 +870,11 @@ function Set-TelegramFolders {
     if (-not(Test-Path $kotatogramDir)) {
         DS_CreateDirectory -Directory $kotatogramDir   
     }
-    elseif (-not(Test-Path $telegramDir)) {
+    else {
+        DS_WriteLog "W" "Folders already exists." $LogFile
+    }
+    
+    if (-not(Test-Path $telegramDir)) {
         DS_CreateDirectory -Directory $telegramDir 
     }
     else {
@@ -795,10 +892,10 @@ function Set-LaragonConfiguration {
     DS_CleanupDirectory -Directory "C:\laragon\bin\nginx"
     DS_CleanupDirectory -Directory "C:\laragon\bin\python"
     DS_CreateDirectory -Directory "C:\laragon\bin\php\php8"
-    $php = "https://windows.php.net/downloads/releases/php-8.3.12-nts-Win32-vs16-x64.zip"
+    $php = "https://github.com/Dreamless2/Updates/releases/download/youpdates/php-8.3.12-nts-Win32-vs16-x64.zip"
     $apache = "https://github.com/Dreamless2/Updates/releases/download/youpdates/httpd-2.4.62-240904-win64-VS17.zip"
-    $notepadplusplus = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.portable.x64.zip"
-    $nginx = "https://nginx.org/download/nginx-1.27.1.zip"
+    $notepadplusplus = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7/npp.8.7.portable.x64.zip"
+    $nginx = "https://nginx.org/download/nginx-1.27.2.zip"
     $apacheName = [System.IO.Path]::GetFileName($apache)
     $phpName = [System.IO.Path]::GetFileName($php)
     $notepadplusplusName = [System.IO.Path]::GetFileName($notepadplusplus)
@@ -841,8 +938,10 @@ function Set-LaragonConfiguration {
 Set-DarkMode
 Disable-Services
 Set-ConfigSystem
+Set-PowerOptions
+Set-NetworkPrivate
 Set-Wallpaper
-Install-Winget
+Add-Winget
 Install-WingetPackages
 Install-Office365
 Install-Delphi12
@@ -853,16 +952,13 @@ Install-JDK
 Install-VirtualBox
 Install-Python
 Install-QuickPlugins
-Install-Postgres16
+Install-Postgres
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
 Set-TelegramFolders
-Read-Host -Prompt "Press any key to continue"
 Add-ExtrasPackages
-Read-Host -Prompt "Press any key to continue"
 Set-ShanaEncoderConfig
 Set-LaragonConfiguration
 Clear-TempFiles
-Read-Host -Prompt "Press any key to continue"
 Remove-WindowsDefender
