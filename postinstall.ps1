@@ -1195,14 +1195,14 @@ function Set-LaragonConfiguration {
 
 # ------------ EXECUÇÃO ------------ #
 
-Set-DarkMode
+<#Set-DarkMode
 Disable-Services
 Set-ConfigSystem
 Set-PowerOptions
 Set-NetworkPrivate
 Set-Wallpaper
 Install-WingetPackages
-Install-Office365
+Install-Office365#>
 Install-Delphi12
 Install-ShanaEncoder
 Install-BitTorrent
