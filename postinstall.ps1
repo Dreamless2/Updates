@@ -879,7 +879,7 @@ function Install-Postgres {
             finally {
                 if (DS_CheckPathExists -Path $tempFile) {  
                     DS_WriteLog I "Removing Temporary downloaded file: '$tempFile'" $LogFile
-                    DS_DeleteFile -File $tempFile
+                    #DS_DeleteFile -File $tempFile
                 }
             }
         }
