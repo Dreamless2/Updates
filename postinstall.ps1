@@ -394,9 +394,9 @@ function Set-Ensure-OSCompatibility {
 }
 
 function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/6559795/pexels-photo-6559795.jpeg"    
+    $wallpaperUrl = "https://images.pexels.com/photos/3064257/pexels-photo-3064257.jpeg"    
     $wallpaperFileName = [System.IO.Path]::GetFileName($wallpaperUrl)
-    $wallpaperPath = DS_JoinPath -Paths $env:USERPROFILE $wallpaperFileName
+    $wallpaperPath = DS_JoinPaths -Paths $env:USERPROFILE, $wallpaperFileName
     DS_WriteLog I "- Aplicando novo papel de parede..." $LogFile
     DS_SetRegistryValue -RegKeyPath "hkcu:\Control Panel\Desktop" -RegValueName "JPEGImportQuality" -RegValue "100" -Type "DWORD"       
     DownloadFileWebRequest -SourceUri $wallpaperUrl -DestinationPath $wallpaperPath
