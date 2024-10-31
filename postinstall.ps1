@@ -13,32 +13,32 @@ $downloadsFolderPath = "$env:USERPROFILE\Downloads"
 
 Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 
-if (!(DS_CheckPathExists -Path $aria2c)) {
+if (!(Test-Path -Path $aria2c)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
 }
 
-if (!(DS_CheckPathExists -Path $aria2conf)) {
+if (!(Test-Path -Path $aria2conf)) {
     Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -Destination $TempDir
 }
 
-if (!(DS_CheckPathExists -Path $settings)) {
+if (!(Test-Path-Path $settings)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
 }
 
-if (!(DS_CheckPathExists -Path $idm)) {
+if (!(Test-Path -Path $idm)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $TempDir
 }
 
-if (!(DS_CheckPathExists -Path $sysinternals)) {
+if (!(Test-Path -Path $sysinternals)) {
 
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Sysinternals.reg" -Destination $TempDir
 }
 
-if (!(DS_CheckPathExists -Path $revoLic)) {
+if (!(Test-Path -Path $revoLic)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $TempDir
 }
 
-if (DS_CheckPathExists -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
+if (Test-Path -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
     Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
 }
 
