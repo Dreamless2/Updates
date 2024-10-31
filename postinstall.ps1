@@ -143,7 +143,8 @@ $PKGS = @(
     "Microsoft.DotNet.SDK.7",
     "Microsoft.DotNet.SDK.8",
     "Flameshot.Flameshot",
-    "Glarysoft.GlaryUtilities"     
+    "Glarysoft.GlaryUtilities",
+    "EclipseAdoptium.Temurin.21.JDK"
 )
 
 #==========================================================================
@@ -615,7 +616,7 @@ function Install-BitTorrent {
     DS_WriteLog I "- Iniciando instalação do qBitTorrent." $LogFile
     if (!(DS_CheckPathExists -Path "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
         DownloadAria2 -Url $qBitTorrentUrl -DestinationPath $TempDir        
-        DS_InstallOrUninstallSoftware -File $qBitTorrentPath -Installationtype "Install" -Arguments "/S"
+        DS_ExecuteProcess -FileName $qBitTorrentPath -Arguments "/S"
         DS_WriteLog S "- qBitTorrent instalado com sucesso." $LogFile                   
     }
     
@@ -630,24 +631,14 @@ function Install-MKVExtractor {
     DS_WriteLog I "- Iniciando instalação do Inviska MKV Extract..." $LogFile
     if (!(DS_CheckPathExists -Path "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {              
         DownloadAria2 -Url $inviskaUrl -DestinationPath $TempDir                
-        DS_InstallOrUninstallSoftware -File $inviskaPath -Installationtype "Install" -Arguments ""
+        DS_ExecuteProcess -FileName $inviskaPath
         DS_WriteLog S "- Inviska MKV Extract instalado com sucesso." $LogFile                
     }
     else {
         DS_WriteLog W "- Inviska MKV Extract já está instalado." $LogFile
     }         
 }
-function Install-JDK {
-    DS_WriteLog I "- Iniciando instalacao do JDK Temurin 21..." $LogFile
-    if (!(DS_CheckPathExists -Path "$env:ProgramFiles\Eclipse Adoptium\jdk-21.0.5.11-hotspot\bin\javac.exe")) {       
-        DownloadAria2 -Url $jdkUrl -DestinationPath $TempDir
-        DS_InstallOrUninstallSoftware -File $jdkPath -Installationtype "Install" -Arguments "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome /quiet" 
-        DS_WriteLog S "- JDK Temurin 21 instalado com sucesso." $LogFile 
-    }
-    else {
-        DS_WriteLog W "JDK Temurin 21 já está instalado." $LogFile
-    }  
-}
+
 function Get-Python {
     DS_WriteLog I "- Iniciando instalação do ptyhon." $LogFile   
     
@@ -732,7 +723,7 @@ function Install-Delphi12 {
   
     DS_WriteLog I "- Instalando Windows 11 SDK 64 bits." $LogFile  
     DownloadAria2 -Url $w11sdkUrl -DestinationPath $TempDir
-    DS_InstallOrUninstallSoftware -File $w11sdkPath -Installationtype "Install" -Arguments "/features OptionId.DesktopCPPx64 /quiet /norestart"
+    DS_ExecuteProcess -FileName $w11sdkPath -Arguments "/features OptionId.DesktopCPPx64 /quiet /norestart"
     DS_WriteLog S "- Windows 11 SDK Desktop 64 bits instalado com sucesso." $LogFile  
     DS_WriteLog I "- Baixando Key Patch" $LogFile
     DownloadAria2 -Url $keypatchUrl -DestinationPath $TempDir
@@ -744,7 +735,7 @@ function Install-Delphi12 {
         if (DS_CheckPathExists-Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog I "- Iniciando a instalação do CnPack Wizard..." $LogFile
             DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
-            DS_InstallOrUninstallSoftware -File $cnPackPath -Installationtype "Install" -Arguments ""
+            DS_ExecuteProcess -FileName $cnPackPath -Arguments ""
             DS_WriteLog I "- CnPack Wizard instalado com sucesso." $LogFile          
         }
         else {
@@ -925,7 +916,7 @@ function Install-Postgres {
             DownloadAria2 -Url $odbcUrl -DestinationPath $odbcPath            
         }
         else {
-            DS_InstallOrUninstallSoftware -File $odbcPath -Installationtype "Install" -Arguments "" 
+             DS_ExecuteProcess -FileName "msiexec" -Arguments "/i $odbcPath /qn quiet" 
         }
     }
 
@@ -1203,7 +1194,6 @@ Install-Delphi12
 Install-ShanaEncoder
 Install-BitTorrent
 Install-MKVExtractor
-Install-JDK
 Install-Python
 Install-QuickPlugins
 Install-Postgres -DownloadLatest -ODBC
