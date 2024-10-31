@@ -656,14 +656,12 @@ function Get-Python {
             $downloadUrl = "https://www.python.org/ftp/python/$version/python-$version-amd64.exe"
             $outputPath = "$TempDir\python-$version-amd64.exe"
             DS_WriteLog I "- Baixando Python $version de $downloadUrl para $outputPath." $LogFile  
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputPath
+            DownloadAria2 -Url $downloadUrl -DestinationPath $TempDir              
             DS_WriteLog I "- Download concluído com sucesso! Instalador salvo em $outputPath." $LogFile  
         }
         else {
             DS_WriteLog I "- Não foi possível encontrar a versão mais recente do Python." $LogFile  
-        }
-
-        DS_InstallOrUninstallSoftware -File $outputPath -Installationtype "Install" -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
+        }        
     }
     else {
         DS_WriteLog S "Python já está instalado no sistema." $LogFile
@@ -1153,6 +1151,21 @@ function Install-PHP {
         Get-PHP    
     }
 }
+
+function Install-Python {
+    $python = Get-ChildItem -Path $TempDir -Filter "python*.exe" -Recurse -ErrorAction SilentlyContinue
+
+    if ($python -and $python.FullName -is [string]) {
+        DS_WriteLog I "- Arquivo encontrado: $($python.Name)." $LogFile
+        DS_WriteLog I $python.Name $LogFile
+        DS_ExecuteProcess -FileName $python.FullName -Arguments "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
+    }
+    else {
+        DS_WriteLog I "- Arquivo não encontrado. Baixando nova versão." $LogFile
+        Get-Python    
+    }
+}
+
 function Set-LaragonConfiguration {    
     DS_WriteLog I "- Iniciando configuraçã de Laragon." $LogFile
     DS_CleanupDirectory -Directory "$Laragon\php"
