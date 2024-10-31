@@ -11,9 +11,7 @@ $presets = "$env:HOMEDRIVE\ShanaEncoder\presets"
 $settings = "$env:HOMEDRIVE\ShanaEncoder\settings" 
 $downloadsFolderPath = "$env:USERPROFILE\Downloads"
 
-Import-Module .\DS_PowerShell_Function_Library.psm1
-
-#Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
+Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/DS_PowerShell_Function_Library.psm1" -Destination $TempDir
 
 if (!(DS_CheckPathExists -Path $aria2c)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/aria2c.exe" -Destination $TempDir
@@ -40,9 +38,9 @@ if (!(DS_CheckPathExists -Path $revoLic)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $TempDir
 }
 
-#if (DS_CheckPathExists -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
-#    Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
-#}
+if (DS_CheckPathExists -Path "$TempDir\DS_PowerShell_Function_Library.psm1") {
+    Import-Module "$TempDir\DS_PowerShell_Function_Library.psm1"
+}
 
 #==========================================================================
 
