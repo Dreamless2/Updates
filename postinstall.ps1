@@ -704,7 +704,7 @@ function Install-ShanaEncoder {
           
         foreach ($url in $cleanUrls) {   
             $fileName = [System.IO.Path]::GetFileName($url)
-            $filePath = DS_JoinPath -Paths $TempDir, $fileName
+            $filePath = DS_JoinPaths -Paths $TempDir, $fileName
             DownloadFileWebRequest -SourceUri $url -DestinationPath $filePath
             DS_WriteLog I "- Arquivos salvos em: $filePath." $LogFile     
         }           
