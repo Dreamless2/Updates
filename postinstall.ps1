@@ -21,7 +21,7 @@ if (!(Test-Path -Path $aria2conf)) {
     Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/aria2.conf" -Destination $TempDir
 }
 
-if (!(Test-Path-Path $settings)) {
+if (!(Test-Path -Path $settings)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $TempDir
 }
 
