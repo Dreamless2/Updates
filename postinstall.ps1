@@ -674,7 +674,7 @@ function Install-ShanaEncoder {
     if (!(DS_CheckPathExists -Path "C:\ShanaEncoder")) {        
         DownloadAria2 -Url $codecUrl -DestinationPath $TempDir
         DownloadAria2 -Url $shanaUrl -DestinationPath $TempDir    
-        DS_InstallOrUninstallSoftware -File $shanaPath -Installationtype "Install" -Arguments ""  
+        DS_ExecuteProcess -FileName $shanaPath 
         DS_WriteLog S "- ShanaEncoder instalado com sucesso." $LogFile    
     }
 
@@ -735,7 +735,7 @@ function Install-Delphi12 {
         if (DS_CheckPathExists-Path "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
             DS_WriteLog I "- Iniciando a instalação do CnPack Wizard..." $LogFile
             DownloadAria2 -Url $cnPackUrl -DestinationPath $TempDir
-            DS_ExecuteProcess -FileName $cnPackPath -Arguments ""
+            DS_ExecuteProcess -FileName $cnPackPath
             DS_WriteLog I "- CnPack Wizard instalado com sucesso." $LogFile          
         }
         else {
