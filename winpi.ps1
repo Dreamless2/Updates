@@ -1,812 +1,2524 @@
-$AppsDir = "$env:USERPROFILE\Downloads\Apps"
-$presets = "$env:HOMEDRIVE\ShanaEncoder\presets"
-$shanaSettings = "$env:HOMEDRIVE\ShanaEncoder\settings" 
-$Laragon = "$env:HOMEDRIVE\laragon\bin"
-$Postgres = "$env:HOMEDRIVE\Postgres"
-$LogFile = "$AppsDir\winpi\winpi.log"
-$settings = "$AppsDir\Settings.reg"
-$idm = "$AppsDir\IDM.reg"
-$sysinternals = "$AppsDir\Sysinternals.reg"
-$revoLic = "$AppsDir\revouninstallerpro5.lic"
-$qbitTorrentConf = "$AppsDir\qt.conf"
-
-if (-not(Test-Path -Path $AppsDir)) {
-    New-item -ItemType Directory $AppsDir
-}
-
-Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/main/Nekta.psm1" -Destination $AppsDir
-
-if (Test-Path -Path "$AppsDir\Nekta.psm1") {
-    Import-Module "$AppsDir\Nekta.psm1"
-}
-
-if (-not(Test-Path -Path $settings)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
-}
-
-if (-not(Test-Path -Path $idm)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $AppsDir
-}
-
-if (-not(Test-Path -Path $sysinternals)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Sysinternals.reg" -Destination $AppsDir
-}
-
-if (-not(Test-Path -Path $revoLic)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $AppsDir
-}
-
 #==========================================================================
+# List of all functions in this script:
+# -------------------------------------
+# -Windows functions
+#     -Files and folders
+#       -Nekta_PurgeFiles                           -> Delete files in a directory
+#       -Nekta_CopyArchive                          -> Copy a file or multiple files
+#       -Nekta_NewDirectory                         -> Create a directory
+#       -Nekta_WipeDirectory                        -> Delete a directory
+#       -Nekta_MoveDirectory                        -> Move a directory
+#       -Nekta_DeleteFile                           -> Delete a file
+#       -Nekta_RenameItem                           -> Rename a file or registry value
+#       -Nekta_UnzipArchive                         -> Expand a zip file 
+#       -Nekta_AddStream                            -> Add content to a file
+#       -Nekta_GetStream                            -> Get content from file 
+#       -Nekta_MoveArchive                          -> Move a file or multiple files
+#       -Nekta_GetFileName                          -> Get a name of any file
+# Nekta_ISOSetupInstall
+#     -Installations and executables
+#       -Nekta_RunProcess                           -> Start a process
+#       -Nekta_RunProcessNoWait                     -> Start a process without wait 
+#       -Nekta_MSIInstall                           -> Install msi software
+#       -Nekta_SetupInstall                         -> Install exe software
+#     -Logging
+#       -Nekta_Logging                              -> Write log file
+#     -Registry
+#       -Nekta_NewRegKey                            -> Create a registry key
+#       -Nekta_DeleteRegKey                         -> Delete a registry key
+#       -Nekta_DeleteRegKeyValue                    -> Delete a registry value (any data type)
+#       -Nekta_ImportRegFile                        -> Import a registry (*.reg) file into the registry
+#       -Nekta_RenameRegKey                         -> Rename a registry key
+#       -Nekta_RenameRegKeyValue                    -> Rename a registry value
+#       -Nekta_SetRegKeyValue                       -> Create or modify a registry value (any data type)
+#     -Services
+#       -Nekta_ModifyStartupService                 -> Change the startup type of a service (Boot, System, Automatic, Manual and Disabled)
+#       -Nekta_StopService                          -> Stop a service (including depend services)
+#       -Nekta_StartingService                      -> Start service (including depend services)
+#     -System
+#       -Nekta_WipePrefetch                         -> Clear prefetch folder
+#       -Nekta_StartStopProcess                     -> Start and stop a process     
+#       -Nekta_FindPath                             -> Checks if path exists
+#       -Nekta_ResolvePath                          -> Resolves a given path (Path or LiteralPath) and checks if it exists.
+#     -Downloads
+#       -Nekta_ResolveUri                           -> Resolves a URI and retrieves information such as file size, last modified date, and filename.
+#       -Nekta_NovaDownloader                       -> Downloading a file with progress bar and some features
+#
 
-# Início
-#==========================================================================
+$global:ErrorActionPreference = "Stop"
+if ($verbose) { $global:VerbosePreference = "Continue" }
 
-$shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder6.0.1.7.exe"
-$inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
-$qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-5.0.1/qbittorrent_5.0.1_qt6_lt20_x64_setup.exe"
-$defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"    
-$apacheUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/httpd-2.4.62-240904-win64-VS17.zip"
-$delphiURL = "https://altd.embarcadero.com/download/radstudio/12.0/RADStudio_12_2_i_0329_C2CC.iso"    
-$w11sdkUrl = "https://download.microsoft.com/download/e/b/3/eb320eb1-b21e-4e6e-899e-d6aec552ecb0/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe"
-$keypatchUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/KeyPatch_new.exe"
-$codec32Url = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x86.7z"
-$codec64Url = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
-$rarregUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
-$postgresUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Server.zip"
-$winfindrUrl = "https://winfindr.com/WinFindr_Setup.exe"
-
-$shana = Nekta_GetFilename -F $shanaUrl        
-$inviska = Nekta_GetFilename -F $inviskaUrl0
-$qBitTorrent = Nekta_GetFilename -F $qBitTorrentUrl
-$defenderName = Nekta_GetFilename -F $defenderUrl
-$apacheName = Nekta_GetFilename -F $apacheUrl
-$delphiName = Nekta_GetFilename -F $delphiURL
-$w11sdkName = Nekta_GetFilename -F $w11sdkUrl
-$keypatchName = Nekta_GetFilename -F $keypatchUrl
-$postgresName = Nekta_GetFilename -F $postgresUrl
-$winfindrName = Nekta_GetFilename -F $winfindrUrl
-$rarregName = Nekta_GetFilename -F $rarregUrl
-
-$defenderPath = Join-Path $AppsDir $defenderName
-$shanaPath = Join-Path $AppsDir $shana      
-$inviskaPath = Join-Path $AppsDir $inviska
-$qBitTorrentPath = Join-Path $AppsDir $qBitTorrent
-$apachePath = Join-Path $AppsDir $apacheName
-$delphiISOPath = Join-Path $AppsDir $delphiName   
-$w11sdkPath = Join-Path $AppsDir $w11sdkName    
-$keypatchPath = Join-Path $AppsDir $keypatchName
-$postgresPath = Join-Path $AppsDir $postgresName
-$winfindrPath = Join-Path $AppsDir $winfindrName
-$rarregPath = Join-Path $AppsDir $rarregName
-
-#==========================================================================
-
-# Pacotes winget
-#==========================================================================
-
-$PKGS = @(
-    "9P7KNL5RWT25",
-    "Microsoft.VCRedist.2005.x86",
-    "Microsoft.VCRedist.2005.x64",
-    "Microsoft.VCRedist.2008.x86",
-    "Microsoft.VCRedist.2008.x64",
-    "Microsoft.VCRedist.2010.x86",
-    "Microsoft.VCRedist.2010.x64",
-    "Microsoft.VCRedist.2012.x86",
-    "Microsoft.VCRedist.2012.x64",
-    "Microsoft.VCRedist.2013.x86",
-    "Microsoft.VCRedist.2013.x64",
-    "Microsoft.VCRedist.2015+.x86",
-    "Microsoft.VCRedist.2015+.x64",
-    "GeorgieLabs.SoundWireServer",
-    "CrystalRich.LockHunter",
-    "Google.Chrome",
-    "Maxthon.Maxthon",
-    "Opera.Opera",
-    "VideoLAN.VLC",
-    "SomePythonThings.WingetUIStore",
-    "KDE.Kdenlive",
-    "Telegram.TelegramDesktop",
-    "Kotatogram.Kotatogram",
-    "RevoUninstaller.RevoUninstallerPro",
-    "Tonec.InternetDownloadManager",
-    "Microsoft.VisualStudioCode",
-    "Bitwarden.Bitwarden",
-    "voidtools.Everything",
-    "Microsoft.PowerShell",
-    "Microsoft.PowerToys", 
-    "RARLab.WinRAR",
-    "gerardog.gsudo",
-    "arch1t3cht.Aegisub",
-    "7zip.7zip",    
-    "Git.Git",
-    "GitHub.cli",
-    "Foxit.FoxitReader",    
-    "MoritzBunkus.MKVToolNix", 
-    "LeNgocKhoa.Laragon",
-    "CodeSector.TeraCopy",
-    "CodeSector.DirectFolders",
-    "UnifiedIntents.UnifiedRemote",
-    "Gyan.FFmpeg",
-    "QL-Win.QuickLook",
-    "MediaArea.MediaInfo.GUI",
-    "ArduinoSA.IDE.stable",       
-    "OpenJS.NodeJS.LTS",
-    "Microsoft.DotNet.SDK.5",
-    "Microsoft.DotNet.SDK.6",
-    "Microsoft.DotNet.SDK.7",
-    "Microsoft.DotNet.SDK.8",
-    "Flameshot.Flameshot",
-    "Glarysoft.GlaryUtilities",
-    "EclipseAdoptium.Temurin.21.JDK"
-)
-
-
-function Set-Wallpaper {
-    $wallpaperUrl = "https://images.pexels.com/photos/3064257/pexels-photo-3064257.jpeg"    
-    $wallpaperFileName = Nekta_GetFilename -F $wallpaperUrl
-    $wallpaperPath = Join-Path $env:USERPROFILE $wallpaperFileName
-    Nekta_Logging INFO "Aplicando novo papel de parede..." $LogFile
-    Invoke-WebRequest -Uri $wallpaperUrl -OutFile $wallpaperPath
-    Nekta_SetRegKeyValue -K "hkcu:\Control Panel\Desktop" -V "JPEGImportQuality" -KV 100 -T "DWORD"
-    Invoke-Expression -Command 'rundll32.exe user32.dll, UpdatePerUserSystemParameters 1, True'
-    Nekta_Logging INFO "Personalizações aplicadas. O Windows Explorer será reiniciado." $LogFile       
-    Nekta_StartStopProcess "explorer"
-    Nekta_Logging SUCCESS "Novo papel de parede aplicado." $LogFile
+if ( ([string]::IsNullOrEmpty($LogFile)) -Or ($LogFile.Length -eq 0) ) {
+    $LogDir = "$env:TEMP\Logs"
+    $LogFileName = "DefaultLogFile_$(Get-Date -format dd-MM-yyyy)_$((Get-Date -format HH:mm:ss).Replace(":","-")).log"
+    $LogFile = Join-path $LogDir $LogFileName
 }
 
-function Set-ConfigSystem {
-    Nekta_Logging INFO "Definindo configurações do computador" $LogFile    
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
-    Nekta_SetRegKeyValue -K "hkcu:\Control Panel\Keyboard" -V "PrintScreenKeyForSnippingEnabled" -KV "0" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hklm:\SOFTWARE\Policies\Microsoft\OneDrive" -V "KFMBlockOptIn" -KV "1" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hkcu:\SOFTWARE\Policies\Microsoft\TabletPC" -V "DisableSnippingTool" -KV "1" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hklm:\SOFTWARE\Policies\Microsoft\TabletPC" -V "DisableSnippingTool" -KV "1" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments" -V "SaveZoneInformation" -KV "1" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hkcu:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -V "SilentInstalledAppsEnabled" -KV "0" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hklm:\SYSTEM\CurrentControlSet\Control\BitLocker" -V "PreventDeviceEncryption" -KV "1" -Type DWORD
-    Nekta_SetRegKeyValue -K "hklm:\SYSTEM\CurrentControlSet\Control\FileSystem" -V "LongPathsEnabled" -KV "1" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hklm:\Software\Microsoft\Visualstudio\Setup\" -V "CachePath" -KV "D:\Microsoft\VisualStudio\Packages" -T "String"  
-    Nekta_SetRegKeyValue -K "hklm:\Software\Microsoft\Visualstudio\Setup\" -V "SharedInstallationPath" -KV "D:\Microsoft\VisualStudio\Shared" -T "String"
-    Nekta_Logging SUCCESS "Configurações Finalizadas." $LogFile
-}
-function Set-PowerOptions {
-    Nekta_Logging INFO "Configurando para DESEMPENHO MÁXIMO" $LogFile
-    Invoke-Expression -Command "powercfg /h off"
-    Invoke-Expression -Command "powercfg /s e9a42b02-d5df-448d-aa00-03f14749eb61"
-    Invoke-Expression -Command "powercfg /x standby-timeout-ac 0"
-    Invoke-Expression -Command "powercfg /x disk-timeout-ac 0"
-    Invoke-Expression -Command "powercfg /x monitor-timeout-ac 15"
-    Invoke-Expression -Command "powercfg /SETACVALUEINDEX SCHEME_CURRENT 2a737441-1930-4402-8d77-b2bebba308a3 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0"
-    Invoke-Expression -Command "fsutil.exe behavior set disableLastAccess 1"
-    Invoke-Expression -Command "fsutil behavior set disable8dot3 1"
-    Nekta_Logging SUCCESS "Configurações Finalizadas." $LogFile
-}
-function Set-NetworkPrivate {
-    if (1, 3, 4, 5 -contains (Get-WmiObject win32_computersystem).DomainRole) { 
-        return 
-    }
-
-    $networkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]"{DCB00C01-570F-4A9B-8D69-199FDBA5723B}"))
-    $connections = $networkListManager.GetNetworkConnections()
-
-    $connections | ForEach-Object {
-        Nekta_Logging INFO $_.GetNetwork().GetName()"category was previously set to"$_.GetNetwork().GetCategory() $LogFile
-        $_.GetNetwork().SetCategory(1)
-        Nekta_Logging INFO $_.GetNetwork().GetName()"changed to category"$_.GetNetwork().GetCategory() $LogFile
-    }
-}
-
-function Set-DarkMode {
-    Nekta_Logging INFO "Ativando Dark Mode." $LogFile
-    Nekta_SetRegKeyValue -K "hkcu:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -V "AppsUseLightTheme" -KV "0" -T "DWORD"
-    Nekta_SetRegKeyValue -K "hkcu:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -V "SystemUsesLightTheme" -KV "0" -T "DWORD"
-    Nekta_Logging SUCCESS "Dark Mode ativado com sucesso." $LogFile
-}
-
+# FUNCTION Nekta_PurgeFiles
+# Description: delete all files and subfolders in one specific directory (e.g. C:\Windows\Temp). Do not delete the main folder itself.
 #==========================================================================
-
-# Pacotes
-#==========================================================================
-
-function Install-WingetPackages {
-    Nekta_Logging INFO "Iniciando a instalação de pacotes pelo winget." $LogFile
-
-    $count = 0
-
-    foreach ($pkg in $PKGS) {
-        $installed = Invoke-Expression -Command "winget list $pkg --accept-source-agreements"
-        if ($installed -match ([regex]::Escape($pkg))) {
-            Nekta_Logging WARNING " $pkg instalado." $LogFile
-        }
-        else {
-            Nekta_Logging INFO "Iniciando a instalação de $pkg." $LogFile
-            Invoke-Expression -Command "winget install $pkg --accept-package-agreements --accept-source-agreements -h" -ErrorAction SilentlyContinue
-            
-            if ($?) {
-                Nekta_Logging INFO "O pacote $pkg foi instalado!" $LogFile
-                $count++
-            }
-            else {
-                Nekta_Logging WARNING " Falha em instalar o pacote $pkg." $LogFile              
-            }
-        }
-    }
-
-    Nekta_Logging INFO "Todos os pacotes foram instalados." $LogFile
-    Nekta_Logging INFO "$count de $($PKGS.Count) pacotes foi instalado." $LogFile
-}
-
-#==========================================================================
-
-# Desabilitar Serviços
-#==========================================================================
-
-function Disable-Services {
-    $services = @(
-        "CertPropSvc"                              # Certificates Propagation Service
-        "diagnosticshub.standardcollector.service" # Microsoft (R) Diagnostics Hub Standard Collector Service
-        "DiagTrack"                                # Diagnostics Tracking Service
-        "DPS"                                      # Diagnostic Policies Service
-        "dmwappushservice"                         # WAP Push Message Routing Service  
-        "iphlpsvc"                                 # Auxiliar IP App
-        "lfsvc"                                    # Geolocation Service
-        "lmhosts"                                  # NetBIOS over TCP/IP Auxiliar App
-        "MapsBroker"                               # Downloaded Maps Manager
-        "MSiSCSI"                                  # Microsoft iSCSI Initatior Service
-        "Netlogon"                                 # NetLogon Service
-        "PcaSvc"                                   # Compatibility Programs Assistant Service
-        "RemoteRegistry"                           # Remote Registry
-        "RemoteAccess"                             # Routing and Remote Access
-        "RpcLocator"                               # Remote Procedure Call (RPC) Locator
-        "SCardSvr"                                 # Smart card
-        "SCPolicySvc"                              # Smart card Extraction Policy Service
-        "SharedAccess"                             # Internet Connection Sharing (ICS)
-        "SNMPTRAP"                                 # SNMP Capture Service       
-        "stisvc"                                   # Windows Image acquisition (WIA) Service        
-        "TrkWks"                                   # Distributed Link Tracking Client
-        "WbioSrvc"                                 # Windows Biometric Service
-        "WlanSvc"                                  # WLAN AutoConfig    
-        "WMPNetworkSvc"                            # Windows Media Player Network Sharing Service
-        "SysMain"                                  # SuperFetch
-        "WSearch"                                  # Windows Search
+Function Nekta_PurgeFiles {
+    <#
+        .SYNOPSIS
+        Delete all files and subfolders in one specific directory, but do not delete the main folder itself
+        .DESCRIPTION
+        Delete all files and subfolders in one specific directory, but do not delete the main folder itself
+        .PARAMETER Directory
+        This parameter contains the full path to the directory that needs to cleaned (for example 'C:\Temp')
+        .EXAMPLE
+        Nekta_PurgeFiles -Directory "C:\Temp"
+        Deletes all files and subfolders in the directory 'C:\Temp'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("D")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$Directory
     )
 
-    foreach ($service in $services) {
-        Nekta_Logging INFO "Desabilitando e parando serviços desnecessários." $LogFile
-        Nekta_ModifyStartupService -S $service -T "Disabled"
-        Nekta_StopService -S $service        
-        Nekta_Logging SUCCESS "Serviço $service desabilitado e parado com sucesso." $LogFile
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
     }
-}
-
-#==========================================================================
-
-# Remover Windows Defender
-#==========================================================================
-
-function Remove-WindowsDefender {
-    Nekta_Logging INFO "Baixando Windows Defender Removal" $LogFile
-    Nekta_NovaDownloader -U $defenderUrl -D $AppsDir
-    Nekta_RunProcess -F $defenderPath
-}
-
-#==========================================================================
-
-# Configuração Extras 
-#==========================================================================
-
-function Add-ExtrasPackages {  
-    if (Nekta_FindPath -P "$env:ProgramFiles\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
-        Nekta_Logging INFO "Ativando Revo Uninstaller Pro." $LogFile
-        Nekta_NovaDownloader -U $revoLic -D $AppsDir
-        Nekta_CopyArchive -F "$AppsDir\revouninstallerpro5.lic" -D "$env:ProgramData\VS Revo Group\Revo Uninstaller Pro"        
-        Nekta_Logging SUCCESS "Revo Uninstaller Pro registrado com sucesso." $LogFile
-    }
-
-    if (Nekta_FindPath -P "${env:ProgramFiles(x86)}\Internet Download Manager\IDMan.exe") {
-        Nekta_Logging INFO "Ativando IDM." $LogFile
-        Nekta_StopService -S "idm*" 
-        Nekta_ImportRegFile -F $idm
-        Nekta_Logging SUCCESS "IDM ativado com sucesso." $LogFile        
-    }
-
-    if (-not(Nekta_FindPath -P "$env:ProgramFiles\WinRAR\rarreg.key")) {
-        Nekta_Logging INFO "Ativando WinRAR..." $LogFile
-        Nekta_NovaDownloader -U $rarregUrl -D $AppsDir
-        Nekta_CopyArchive -F $rarregPath -D "$env:ProgramFiles\WinRAR"
-        Nekta_Logging SUCCESS "WinRAR ativado com sucesso." $LogFile          
-    }
-    else {
-        Nekta_Logging INFO "Winrar já está instalado. Iniciando configuração através do regedit." $LogFile
-        Nekta_ImportRegFile -F $settings
-        Nekta_Logging SUCCESS "Winrar configurado com sucesso." $LogFile           
-    }    
-
-    if (Nekta_FindPath -P "$env:LOCALAPPDATA\Microsoft\WindowsApps\streams.exe") {
-        Nekta_Logging INFO "Configurando Sysinternals." $LogFile   
-        Nekta_ImportRegFile -F $sysinternals
-        Nekta_Logging INFO "Sysinternals configurado com sucesso." $LogFile           
-    }
-
-    Nekta_Logging SUCCESS "Pacotes configurados com sucesso." $LogFile   
-}
-
-#==========================================================================
-
-# Apps Principais
-#==========================================================================
-function Get-QuickLookPlugins {
-    Nekta_Logging INFO "Baixando plugins do QuickLook." $LogFile
-    Nekta_NovaDownloader -U "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -D $AppsDir
-    Nekta_NovaDownloader -U "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -D $AppsDir
-    Nekta_NovaDownloader -U "https://github.com/emako/QuickLook.Plugin.TorrentViewer/releases/download/v1.0.3/QuickLook.Plugin.TorrentViewer.qlplugin" -D $AppsDir    
-    Nekta_Logging SUCCESS "Plugins doQuickLook baixados com sucesso." $LogFile
-}
-function Install-Office365 {
-    $officeToolUrl = "https://github.com/YerongAI/Office-Tool/releases/download/v10.17.9.0/Office_Tool_with_runtime_v10.17.9.0_x64.zip"   
-    $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
-    $officeToolName = Nekta_GetFilename -F $officeToolUrl
-    $officeToolPath = Join-Path $AppsDir $officeToolName    
-    Nekta_Logging INFO "Instalando Office 365" $LogFile
-    Nekta_NovaDownloader -U $configurationUrl -D $AppsDir    
-    Nekta_NovaDownloader -U $officeToolUrl -D $AppsDir
-    Nekta_UnzipArchive -F $officeToolPath -D $AppsDir -P
-    Nekta_RunProcess F "$AppsDir\Office Tool\Office Tool Plus.exe"
-    Invoke-RestMethod https://get.activated.win | Invoke-Expression
-    Nekta_Logging SUCCESS "Office 365 instalado com sucesso." $LogFile
-}
-function Install-BitTorrent {
-    Nekta_Logging INFO "Iniciando instalação do qBitTorrent." $LogFile
-    if (-not(Nekta_FindPath -P "$env:ProgramFiles\qBittorrent\qbittorrent.exe")) {      
-        Nekta_NovaDownloader -U $qBitTorrentUrl -D $AppsDir        
-        Nekta_SetupInstall -F $qBitTorrentPath -A "/S"
-        Nekta_Logging SUCCESS "qBitTorrent instalado com sucesso."                   
-    }
-    
-    if (Nekta_FindPath -P "$env:ProgramFiles\qBittorrent\qbittorrent.exe") {    
-        Nekta_Logging INFO "Iniciando configuração do qBitTorrent." $LogFile
-        Nekta_NovaDownloader -U "https://github.com/Dreamless2/Updates/releases/download/youpdates/qt.conf" -D $AppsDir
-        Nekta_CopyArchive -F "$qbitTorrentConf" -D "$env:ProgramFiles\qBittorrent"          
-        Nekta_Logging WARNING " Configuração do qBitTorrent feita com sucesso." $LogFile
-    }
-}
-function Install-MKVExtractor {
-    Nekta_Logging INFO "Iniciando instalação do Inviska MKV Extract..." $LogFile
-    if (-not(Nekta_FindPath -P "$env:ProgramFiles\Inviska MKV Extract\InviskaMKVExtract.exe")) {              
-        Nekta_NovaDownloader -U $inviskaUrl -D $AppsDir                
-        Nekta_SetupInstall -F $inviskaPath
-        Nekta_Logging SUCCESS "Inviska MKV Extract instalado com sucesso." $LogFile               
-    }
-    else {
-        Nekta_Logging WARNING " Inviska MKV Extract já está instalado." $LogFile
-    }         
-}
-function Get-Python {
-    Nekta_Logging INFO "Iniciando instalação do ptyhon." $LogFile   
-    
-    if (-not(Nekta_FindPath -P "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe")) {                
-        $pythonDownloadUrl = "https://www.python.org/downloads/"
-        $response = Invoke-WebRequest -Uri $pythonDownloadUrl
-        $html = $response.Content
-        $regex = [regex]"\bPython (\d+\.\d+\.\d+)\b"
-        $python = $regex.Matches($html)
-        $latestVersion = $python | Sort-Object { [Version]$_.Groups[1].Value } -Descending | Select-Object -First 1
-
-        if ($latestVersion) {
-            $version = $latestVersion.Groups[1].Value
-            Nekta_Logging INFO "A versão mais recente do Python é: $version." $LogFile
-            $downloadUrl = "https://www.python.org/ftp/python/$version/python-$version-amd64.exe"
-            $outputPath = "$AppsDir\python-$version-amd64.exe"
-            Nekta_Logging INFO "Baixando Python $version de $downloadUrl para $outputPath." $LogFile  
-            Nekta_NovaDownloader -U $downloadUrl -D $AppsDir              
-            Nekta_Logging INFO "Download concluído com sucesso! Instalador salvo em $outputPath." $LogFile  
+ 
+    process {
+        Nekta_Logging "INFO" "Cleanup directory $Directory" $LogFile
+        if (Test-Path $Directory ) {
+            try {
+                Remove-Item "$Directory\*.*" -Force -Recurse | Out-Null
+                Remove-Item "$Directory\*" -Force -Recurse | Out-Null
+                Nekta_Logging "SUCCESS" "Successfully deleted all files and subfolders in the directory $Directory" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to delete files and subfolders in the directory $Directory (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
         }
         else {
-            Nekta_Logging INFO "Não foi possível encontrar a versão mais recente do Python." $LogFile
-        }        
-    }
-    else {
-        Nekta_Logging SUCCESS "Python já está instalado no sistema." $LogFile
-    }
-}
-function Install-ShanaEncoder {
-    Nekta_Logging INFO "Iniciando instalação do Shana Encoder..." $LogFile
-    if (-not(Nekta_FindPath -P "C:\ShanaEncoder")) {        
-        Nekta_NovaDownloader -U $codec32Url -D $AppsDir
-        Nekta_NovaDownloader -U $codec64Url -D $AppsDir
-        Nekta_NovaDownloader -U $shanaUrl -D $AppsDir    
-        Nekta_SetupInstall -F $shanaPath
-        Nekta_Logging SUCCESS "ShanaEncoder instalado com sucesso." $LogFile
+            Nekta_Logging "INFO" "The directory $Directory does not exist. Nothing to do" $LogFile
+        }
     }
 
-    Nekta_Logging INFO "Iniciando configuração do Shana Encoder." $LogFile
-      
-    if (Nekta_FindPath -P "$env:HOMEDRIVE\ShanaEncoder") { 
-        Nekta_Logging INFO "Iniciando configuração de ShanaEncoder." $LogFile 
-        $xml = @(
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Dub.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20HD%20Leg.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Dub.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/MP4%20SD%20Leg.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/Stream%20Copy%20to%20MP4.xml",
-            "https://raw.githubusercontent.com/Dreamless2/Updates/main/shanaapp.xml"
-        )
-          
-        $cleanUrls = $xml | ForEach-Object { [uri]::UnescapeDataString($_) }              
-          
-        foreach ($url in $cleanUrls) {   
-            $fileName = Nekta_GetFilename -F $url
-            $filePath = Join-Path $AppsDir $fileName
-            Invoke-WebRequest -Uri $url -OutFile $filePath
-            Nekta_Logging INFO "Arquivos salvos em: $filePath." $LogFile
-        }           
-        if (Nekta_FindPath -P $presets) {                 
-            Nekta_WipeDirectory -D $presets
-        }        
-  
-        if (Nekta_FindPath -P $settings) {    
-            Nekta_WipeDirectory -D $settings
-        }           
-
-        Nekta_NewDirectory -D "$presets\(Copy)"
-        Nekta_NewDirectory -D "$presets\MP4"
-        Nekta_NewDirectory -D $shanaSettings           
-        Nekta_CopyArchive -F "$AppsDir\MP4 HD Dub.xml" -D "$presets\MP4"
-        Nekta_CopyArchive -F "$AppsDir\MP4 HD Leg.xml" -D "$presets\MP4"
-        Nekta_CopyArchive -F "$AppsDir\MP4 SD Dub.xml" -D "$presets\MP4"
-        Nekta_CopyArchive -F "$AppsDir\MP4 SD Leg.xml" -D "$presets\MP4"
-        Nekta_CopyArchive -F "$AppsDir\Stream Copy to MP4.xml" -D "$presets\(Copy)"      
-        Nekta_CopyArchive -F "$AppsDir\shanaapp.xml" -D "$settings\shanaapp.xml"
-        Nekta_Logging SUCCESS "ShanaEncoder configurado com sucesso." $LogFile
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }
-}
-function Install-W11SDK {
-    Nekta_Logging INFO "Instalando Windows 11 SDK." $LogFile
-    Nekta_NovaDownloader -U $w11sdkUrl -D $AppsDir
-    Nekta_SetupInstall -F $w11sdkPath -A "/features OptionId.DesktopCPPx64 /quiet /norestart"
-    Nekta_Logging SUCCESS "Windows 11 SDK instalado com sucesso." $LogFile
-}
-function Install-Delphi12 {         
-    Nekta_Logging INFO "Baixando Key Patch." $LogFile
-    Nekta_NovaDownloader -U $keypatchUrl -D $AppsDir
-    Nekta_Logging INFO "Instalando Delphi 12.2." $LogFile
-    Nekta_NovaDownloader -U $delphiURL -D $AppsDir      
-    Nekta_RunProcessNoWait -F $keypatchPath             
-
-    if (Nekta_FindPath -P $delphiISOPath) {        
-        Nekta_ISOSetupInstall -I $delphiISOPath -N "radstudio_12_esd_120329a.exe"       
-    }
-
-    if (Nekta_FindPath -P "${env:ProgramFiles(x86)}\Embarcadero\Studio\23.0\bin") {
-        Nekta_Logging WARNING "Delphi já está instalado." $LogFile
-    }
-}
-
-function Install-Postgres {
-    $ServiceName = "postgres"
-    $PG_SUPERUSER = "postgres"
-    $PG_SERVERHOME = "$Postgres\Server"    
-    $PG_DATAHOME = "$Postgres\Data"
-    $PG_AUTHMETHOD = "scram-sha-256"
-    $PG_PASSWORD = "KY55x#W7Tql3"
-    $PG_LOCALE = "pt_BR.UTF-8"
-    $PG_LOCALE_PROVIDER = "icu"
-    $PG_ICU_LOCALE = "pt-BR"       
-
-    Nekta_UnzipArchive -F $postgresPath -D $Postgres -P 
-
-    if (Nekta_FindPath -Path "$Postgres\Server\bin\initdb.exe") {   
-        Nekta_Logging INFO "Postgresql já está instalando na pasta: [$Postgres]." $LogFile        
-    }
-    else {
-        Nekta_NewDirectory -D $Postgres
-    }
-
-    Nekta_Logging INFO "Iniciando novo cluster Postgres usando initdb." $LogFile   
-
-    Nekta_AddStream -F temp_pgsql.pw -C $PG_PASSWORD
-
-    try {
-        & "$PG_SERVERHOME\bin\initdb.exe" -A "$PG_AUTHMETHOD" -D "$PG_DATAHOME" -E UTF8 -U "$PG_SUPERUSER" --locale-provider="$PG_LOCALE_PROVIDER" --icu-locale="$PG_ICU_LOCALE" --locale="$PG_LOCALE" --lc-collate="$PG_LOCALE" --lc-ctype="$PG_LOCALE" --lc-messages="$PG_LOCALE" --lc-monetary="$PG_LOCALE" --lc-numeric="$PG_LOCALE" --lc-time="$PG_LOCALE" --pwfile=temp_pgsql.pw --no-instructions    
-    }
-    finally {
-        Nekta_DeleteFile -File temp_pgsql.pw 
-    }
-
-    Nekta_Logging INFO "Adicionando novo serviço: '$ServiceName'." $LogFile
-
-    & "$PG_SERVERHOME\bin\pg_ctl.exe" register -N "$ServiceName" -U LocalSystem -D "$PG_DATAHOME"
-
-    Nekta_ModifyStartupService -S $ServiceName -StartupType "Automatic"
-    Nekta_StartingService -S $ServiceName
-    $serviceState = (Get-Service -Name $ServiceName).Status
-    
-    if ($serviceState -ne "Running") {
-        Throw "Falha em iniciar serviço $ServiceName."
-    }
-    Nekta_Logging SUCCESS "PostgreSQL instalado com sucesso!" $LogFile
 }
 
 #==========================================================================
 
-# Extras
+# FUNCTION Nekta_UnzipArchive
 #==========================================================================
-function Set-BitTorrentFolders {
-    $bitTorrent = "D:\BitTorrent"
-    $folders = @(, 'Compressed', 'Documents', 'ISO', 'Logs', 'Music', 'Programs', 'Temp', 'Torrents', 'Video')  
 
-    if (-not(Nekta_FindPath -P $bitTorrent)) {
-        Nekta_NewDirectory -D $bitTorrent
-        foreach ($folder in $folders) {
-            Nekta_NewDirectory -D$bitTorrent\$folder
+Function Nekta_UnzipArchive {
+    <#
+        .SYNOPSIS
+        Expand an archive file (ZIP).
+        .DESCRIPTION
+        This function extracts the contents of a compressed archive (ZIP) to a specified destination folder.
+        .PARAMETER File
+        This parameter contains the full path to the ZIP file that you want to extract.
+        .PARAMETER DestinationPath
+        This parameter contains the full path to the directory where the contents will be extracted.
+        .PARAMETER Pattern
+        This parameter specifies whether existing files should be overwritten. The default is 'True'.
+        .EXAMPLE
+        Nekta_UnzipArchive -File "C:\Temp\MyArchive.zip" -DestinationPath "C:\Temp\ExtractedFiles" -Pattern $true
+        Extracts the ZIP file 'MyArchive.zip' to the folder 'ExtractedFiles', overwriting existing files.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$File,
+        [Alias("D")]
+        [Parameter(Mandatory = $false, Position = 1)][AllowEmptyString()][String]$DestinationPath,
+        [Alias("P")]
+        [switch]$Pattern
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        # Logging source and destination paths
+        Nekta_Logging "INFO" "Source file: $File" $LogFile
+        Nekta_Logging "INFO" "Destination path: $DestinationPath" $LogFile
+
+        # Check if the source file exists
+        if (!(Test-Path $File)) {
+            Nekta_Logging "ERROR" "The file '$File' does not exist!" $LogFile
+            Exit 1
+        }
+
+        # Check if the destination directory exists, if not, create it
+        if (!(Test-Path $DestinationPath)) {
+            Nekta_Logging "INFO" "The destination directory does not exist. Creating directory: $DestinationPath" $LogFile
+            New-Item -ItemType Directory -Path $DestinationPath | Out-Null
+        }
+
+        # Expand the archive
+        try {
+            if ($Pattern) {
+                Nekta_Logging "INFO" "Expanding archive '$File' to '$DestinationPath' with overwrite enabled" $LogFile
+                Expand-Archive -Path $File -DestinationPath $DestinationPath -Force
+            }
+            else {
+                Nekta_Logging "INFO" "Expanding archive '$File' to '$DestinationPath' without overwriting" $LogFile
+                Expand-Archive -Path $File -DestinationPath $DestinationPath
+            }
+            Nekta_Logging "SUCCESS" "The archive '$File' was successfully extracted to '$DestinationPath'" $LogFile
+        }
+        catch {
+            Nekta_Logging "ERROR" "An error occurred while extracting the archive '$File' to '$DestinationPath': $_" $LogFile
+            Exit 1
         }
     }
-    else {
-        Nekta_Logging WARNING "Pastas já foram criadas." $LogFile
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }
 }
-function Set-IDMFolders {
-    $idmDir = "D:\IDM"
-    $folders = @(, 'Compressed', 'Documents', 'Music', 'Programs', 'Temp', 'Video', 'APK', 'ISO', 'General')  
 
-    if (-not(Nekta_FindPath -P $idmDir)) {
-        Nekta_NewDirectory -D $idmDir
-        foreach ($folder in $folders) {            
-            Nekta_NewDirectory -D "$idmDir\$folder"
+#==========================================================================
+
+# FUNCTION Nekta_AddStream
+#==========================================================================
+
+Function Nekta_AddStream {
+    <#
+        .SYNOPSIS
+        Adds content to a file.
+        .DESCRIPTION
+        This function adds specified content to a file. If the file does not exist, it will be created automatically.
+        .PARAMETER FilePath
+        Path to the file where content will be added.
+        .PARAMETER Content
+        Content to be added to the file.
+        .EXAMPLE
+        Nekta_AddStream -FilePath "C:\Logs\example.txt" -Content "This is a new line of text."
+        Adds the line "This is a new line of text." to the file example.txt at the specified path.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$FilePath,
+        [Alias("C")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$Content
+    )
+
+    begin {
+        # Log the start of the function
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        # Log the start of the content-adding process
+        Nekta_Logging "INFO" "Adding content to the file '$FilePath'" $LogFile
+
+        try {
+            # Add the content to the specified file
+            Add-Content -Path $FilePath -Value $Content
+            Nekta_Logging "INFO" "Content successfully added to '$FilePath'" $LogFile
+        }
+        catch {
+            # Log any errors encountered during the content addition
+            Nekta_Logging "ERROR" "Error adding content to '$FilePath' (error: $($_.Exception.Message))" $LogFile
+            Exit 1
         }
     }
-    else {
-        Nekta_Logging WARNING "Pastas já foram criadas." $LogFile
+
+    end {
+        # Log the end of the function
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }
 }
-function Set-WinRARFolders {
-    $rarDir = "D:\RAR"
-    $folders = @(, 'Extracted', 'Output', 'Temp')  
 
-    if (-not(Nekta_FindPath -P $rarDir)) {
-        Nekta_NewDirectory -D $rarDir 
-        foreach ($folder in $folders) {
-            Nekta_NewDirectory -D "$rarDir\$folder"
+#==========================================================================
+
+# FUNCTION Nekta_GetStream
+#==========================================================================
+
+Function Nekta_GetStream {
+    <#
+        .SYNOPSIS
+        Retrieves content from a file.
+        .DESCRIPTION
+        This function retrieves the content of a specified file. If the file does not exist, it will log a warning.
+        .PARAMETER FilePath
+        Path to the file from which content will be retrieved.
+        .EXAMPLE
+        Nekta_GetStream -FilePath "C:\Logs\example.txt"
+        Retrieves and returns the content of the file example.txt at the specified path.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$FilePath
+    )
+
+    begin {
+        # Log the start of the function
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        # Log the attempt to read content from the file
+        Nekta_Logging "INFO" "Retrieving content from the file '$FilePath'" $LogFile
+
+        try {
+            # Check if the file exists before reading
+            if (Test-Path $FilePath) {
+                # Get the content from the specified file
+                $Content = Get-Content -Path $FilePath
+                Nekta_Logging "INFO" "Content successfully retrieved from '$FilePath'" $LogFile
+                return $Content
+            }
+            else {
+                # Log a warning if the file does not exist
+                Nekta_Logging "WARNING" "File '$FilePath' does not exist." $LogFile
+                return $null
+            }
+        }
+        catch {
+            # Log any errors encountered during the content retrieval
+            Nekta_Logging "ERROR" "Error retrieving content from '$FilePath' (error: $($_.Exception.Message))" $LogFile
+            Exit 1
         }
     }
-    else {
-        Nekta_Logging WARNING "Pastas já foram criadas." $LogFile
-    }
-}
-function Set-KotatogramFolders {
-    $kotatogramDir = "D:\Kotatogram Desktop"
 
-    if (-not(Nekta_FindPath -P $kotatogramDir)) {
-        Nekta_NewDirectory -D $kotatogramDir   
-    }
-    else {
-        Nekta_Logging WARNING "Pastas já foram criadas." $LogFile
-    }
-}   
-
-function Set-TelegramFolders {
-    $telegramDir = "D:\Telegram Desktop"
-    
-    if (-not(Nekta_FindPath -P $telegramDir)) {
-        Nekta_NewDirectory -D $telegramDir
-    }
-    else {
-        Nekta_Logging WARNING "Pastas já foram criadas." $LogFile
-    }
-}
-function Get-NotepadPlusPlus {
-    $apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
-    $outputFile = "$AppsDir\NotepadPlusPlus.zip"
-
-    try {
-        $webClient = New-Object System.Net.WebClient
-        $webClient.Headers.Add("User-Agent", "PowerShell")    
-        $releaseData = Invoke-RestMethod -Uri $apiUrl -Headers @{ "User-Agent" = "PowerShell" }    
-        $latestVersion = $releaseData.tag_name
-        $downloadUrl = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/$latestVersion/npp.$($latestVersion.TrimStart('v')).portable.x64.zip"    
-        Nekta_Logging INFO "Baixando Notepad++ versão $latestVersion." $LogFile
-        Nekta_NovaDownloader -U $downloadUrl -D $outputFile
-        #$webClient.DownloadFile($downloadUrl, $outputFile)
-        Nekta_Logging INFO "Download concluído: $outputFile" $LogFile
-    }
-    catch {
-        Nekta_Logging ERROR" Ocorreu um erro ao tentar verificar ou baixar a última versão do Notepad++." $LogFile
-        Nekta_Logging ERROR $_.Exception.Message $LogFile
+    end {
+        # Log the end of the function
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }
 }
 
-function Get-PHP {
-    $url = "https://windows.php.net/downloads/releases/"
-    function Get-LatestPHPVersion {
-        $pageContent = Invoke-WebRequest -Uri $url
-        $versionLinks = $pageContent.Links | Where-Object { $_.href -match 'php-(\d+\.\d+\.\d+)-Win32-vs16-x64.zip' }
-        $latestVersionLink = $versionLinks | Sort-Object {
-            $_.href -match 'php-(\d+\.\d+\.\d+)'
-            [version]$matches[1]
-        } -Descending | Select-Object -First 1
 
-        $latestVersionLink = $latestVersionLink.href -replace '^/downloads/releases/', ''
-        return $latestVersionLink
+#==========================================================================
+
+# FUNCTION Nekta_MoveArchive
+#==========================================================================
+Function Nekta_MoveArchive {
+    <#
+        .SYNOPSIS
+        Move one or more files
+        .DESCRIPTION
+        Move one or more files to a specified destination.
+        .PARAMETER SourceFiles
+        Specifies the source file(s) or folder(s) to move. Wildcards can be used, and UNC paths are supported.
+        .PARAMETER Destination
+        Specifies the destination path where the file(s) should be moved. The path may include a file name to rename the file during the move operation.
+        .EXAMPLE
+        Nekta_MoveArchive -SourceFiles "C:\Temp\MyFile.txt" -Destination "C:\Temp2"
+        Moves 'C:\Temp\MyFile.txt' to 'C:\Temp2'.
+        .EXAMPLE
+        Nekta_MoveArchive -SourceFiles "C:\Temp\MyFile.txt" -Destination "C:\Temp2\MyRenamedFile.txt"
+        Moves 'C:\Temp\MyFile.txt' to 'C:\Temp2' and renames it to 'MyRenamedFile.txt'.
+        .EXAMPLE
+        Nekta_MoveArchive -SourceFiles "C:\Temp\*.txt" -Destination "C:\Temp2"
+        Moves all '.txt' files from 'C:\Temp' to 'C:\Temp2'.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$Files,
+        [Alias("D")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$Destination
+    )
+
+    begin {
+        # Log the start of the function
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
     }
 
-    $latestPHP = Get-LatestPHPVersion
-    if ($latestPHP) {
-        $downloadLink = "$url$latestPHP"
-        $outputPath = "$AppsDir\$($latestPHP -split '/' | Select-Object -Last 1)"
-        Nekta_Logging INFO "Baixando PHP da URL: $downloadLink." $LogFile
-        Nekta_NovaDownloader -U $downloadLink -D $AppsDir
-        Nekta_Logging SUCCESS "Download concluído. PHP salvo em $outputPath." $LogFile
-    }
-    else {
-        Nekta_Logging ERROR" Não foi possível encontrar a última versão do PHP." $LogFile
-    }
-}
+    process {
+        # Log the source and destination details
+        Nekta_Logging "INFO" "Move the source file(s) '$Files' to '$Destination'" $LogFile
 
-function Get-Nginx {
-    $downloadPageUrl = "https://nginx.org/en/download.html"
-    $nginxZipFile = "$AppsDir\nginx.zip"
-
-    try {
-        $webClient = New-Object System.Net.WebClient
-        $webClient.Headers.Add("User-Agent", "PowerShell")
-        $pageContent = $webClient.DownloadString($downloadPageUrl)
-
-        $zipUrlMatch = [regex]::Match($pageContent, 'href=\"(/download/nginx-[\d\.]+\.zip)\"')
-
-        if ($zipUrlMatch.Success) {
-            $nginxZipUrl = "https://nginx.org" + $zipUrlMatch.Groups[1].Value
-            Nekta_Logging INFO "Baixando Nginx de: $nginxZipUrl" $LogFile
-            Nekta_NovaDownloader -U $nginxZipUrl -D $AppsDir
-            Nekta_Logging SUCCESS "Download do Nginx concluído e salvo em: $nginxZipFile" $LogFile
+        # Determine the destination directory, creating it if needed
+        if ($Destination.Contains(".")) {
+            # If $Destination contains a dot, treat it as a path with a filename
+            $TempFolder = Split-Path -Path $Destination
         }
         else {
-            Nekta_Logging ERROR" Erro: link para o arquivo zip não encontrado." $LogFile
+            # Otherwise, assume it's a directory path
+            $TempFolder = $Destination
+        }
+
+        # Check if destination path exists; create it if it does not
+        Nekta_Logging "INFO" "Check if the destination path '$TempFolder' exists. If not, create it" $LogFile
+        if (Test-Path $TempFolder) {
+            Nekta_Logging "INFO" "The destination path '$TempFolder' already exists. Nothing to do" $LogFile
+        }
+        else {
+            Nekta_Logging "INFO" "The destination path '$TempFolder' does not exist" $LogFile
+            Nekta_NewDirectory -Directory $TempFolder
+        }
+
+        # Move the source files
+        Nekta_Logging "INFO" "Start moving the source file(s) '$Files' to '$Destination'" $LogFile
+        try {
+            Move-Item -Path $Files -Destination $Destination -Force
+            Nekta_Logging "SUCCESS" "Successfully moved the source file(s) '$Files' to '$Destination'" $LogFile
+        }
+        catch {
+            # Log the error if the move fails
+            Nekta_Logging "ERROR" "An error occurred while moving the source file(s) '$Files' to '$Destination'. Error: $($_.Exception.Message)" $LogFile
+            Exit 1
         }
     }
-    catch {
-        Nekta_Logging ERROR" Ocorreu um erro ao tentar baixar o Nginx." $LogFile
-        Nekta_Logging ERROR $_.Exception.Message $LogFile
+
+    end {
+        # Log the end of the function
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }
 }
 
-function Install-Apache {
-    if (-not(Nekta_FindPath -P $apachePath)) {      
-        Nekta_NovaDownloader -U $apacheUrl -D $AppsDir 
+#==========================================================================
+
+# FUNCTION Nekta_CopyArchive
+#==========================================================================
+Function Nekta_CopyArchive {
+    <#
+        .SYNOPSIS
+        Copy one or more files
+        .DESCRIPTION
+        Copy one or more files
+        .PARAMETER SourceFiles
+        This parameter can contain multiple file and folder combinations including wildcards. UNC paths can be used as well. Please see the examples for more information.
+        To see the examples, please enter the following PowerShell command: Get-Help Nekta_CopyArchive -examples
+        .PARAMETER Destination
+        This parameter contains the destination path (for example 'C:\Temp2' or 'C:\MyPath\MyApp'). This path may also include a file name.
+        This situation occurs when a single file is copied to another directory and renamed in the process (for example '$Destination = C:\Temp2\MyNewFile.txt').
+        UNC paths can be used as well. The destination directory is automatically created if it does not exist (in this case the function 'Nekta_NewDirectory' is called). 
+        This works both with local and network (UNC) directories. In case the variable $Destination contains a path and a file name, the parent folder is 
+        automatically extracted, checked and created if needed. 
+        Please see the examples for more information.To see the examples, please enter the following PowerShell command: Get-Help Nekta_CopyArchive -examples
+        .EXAMPLE
+        Nekta_CopyArchive -Files "C:\Temp\MyFile.txt" -Destination "C:\Temp2"
+        Copies the file 'C:\Temp\MyFile.txt' to the directory 'C:\Temp2'
+        .EXAMPLE
+        Nekta_CopyArchive -Files "C:\Temp\MyFile.txt" -Destination "C:\Temp2\MyNewFileName.txt"
+        Copies the file 'C:\Temp\MyFile.txt' to the directory 'C:\Temp2' and renames the file to 'MyNewFileName.txt'
+        .EXAMPLE
+        Nekta_CopyArchive -Files "C:\Temp\*.txt" -Destination "C:\Temp2"
+        Copies all files with the file extension '*.txt' in the directory 'C:\Temp' to the destination directory 'C:\Temp2'
+        .EXAMPLE
+        Nekta_CopyArchive -Files "C:\Temp\*.*" -Destination "C:\Temp2"
+        Copies all files within the root directory 'C:\Temp' to the destination directory 'C:\Temp2'. Subfolders (including files within these subfolders) are NOT copied.
+        .EXAMPLE
+        Nekta_CopyArchive -Files "C:\Temp\*" -Destination "C:\Temp2"
+        Copies all files in the directory 'C:\Temp' to the destination directory 'C:\Temp2'. Subfolders as well as files within these subfolders are also copied.
+        .EXAMPLE
+        Nekta_CopyArchive -Files "C:\Temp\*.txt" -Destination "\\localhost\Temp2"
+        Copies all files with the file extension '*.txt' in the directory 'C:\Temp' to the destination directory '\\localhost\Temp2'. The directory in this example is a network directory (UNC path).
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$Files,
+        [Alias("D")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$Destination
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Copy the source file(s) '$Files' to '$Destination'" $LogFile
+        # Retrieve the parent folder of the destination path
+        if ( $Destination.Contains(".") ) {
+            # In case the variable $Destination contains a dot ("."), return the parent folder of the path
+            $TempFolder = split-path -path $Destination
+        }
+        else {
+            $TempFolder = $Destination
+        }
+
+        # Check if the destination path exists. If not, create it.
+        Nekta_Logging "INFO" "Check if the destination path '$TempFolder' exists. If not, create it" $LogFile
+        if ( Test-Path $TempFolder) {
+            Nekta_Logging "INFO" "The destination path '$TempFolder' already exists. Nothing to do" $LogFile
+        }
+        else {
+            Nekta_Logging "INFO" "The destination path '$TempFolder' does not exist" $LogFile
+            Nekta_NewDirectory -Directory $TempFolder
+        }
+
+        # Copy the source files
+        Nekta_Logging "INFO" "Start copying the source file(s) '$Files' to '$Destination'" $LogFile
+        try {
+            Copy-Item $Files -Destination $Destination -Force -Recurse
+            Nekta_Logging "SUCCESS" "Successfully copied the source files(s) '$Files' to '$Destination'" $LogFile
+        }
+        catch {
+            Nekta_Logging "ERROR" "An error occurred trying to copy the source files(s) '$Files' to '$Destination'" $LogFile
+            Exit 1
+        }
     }
 
-    if (Nekta_FindPath -P $apachePath) {      
-        Nekta_UnzipArchive -F $apachePath -D "$Laragon\apache" -P
-        Nekta_DeleteFile -F "$Laragon\apache\-- Win64 VS17  --"        
-        Nekta_DeleteFile -F "$Laragon\apache\ReadMe.txt"
-        Nekta_DeleteFile -F "$Laragon\apache\Apache24\README*"
-        Nekta_DeleteFile -F "$Laragon\apache\Apache24\ABOUT*"
-        Nekta_DeleteFile -F "$Laragon\apache\Apache24\CHANGES*"
-        Nekta_DeleteFile -F "$Laragon\apache\Apache24\INSTALL*"
-        Nekta_DeleteFile -F "$Laragon\apache\Apache24\NOTICE*"        
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_NewDirectory
+#==========================================================================
+Function Nekta_NewDirectory {
+    <#
+        .SYNOPSIS
+        Create a new directory
+        .DESCRIPTION
+        Create a new directory
+        .PARAMETER Directory
+        This parameter contains the name of the new directory including the full path (for example C:\Temp\MyNewFolder).
+        .EXAMPLE
+        Nekta_NewDirectory -Directory "C:\Temp\MyNewFolder"
+        Creates the new directory "C:\Temp\MyNewFolder"
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("D")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$Directory
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Create directory $Directory" $LogFile
+        if ( Test-Path $Directory ) {
+            Nekta_Logging "INFO" "The directory $Directory already exists. Nothing to do" $LogFile
+        }
+        else {
+            try {
+                New-Item -ItemType Directory -Path $Directory -Force | Out-Null
+                Nekta_Logging "SUCCESS" "Successfully created the directory $Directory" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to create the directory $Directory (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_WipeDirectory
+# Description: delete the entire directory
+#==========================================================================
+Function Nekta_WipeDirectory {
+    <#
+        .SYNOPSIS
+        Delete a directory
+        .DESCRIPTION
+        Delete a directory
+        .PARAMETER Directory
+        This parameter contains the full path to the directory which needs to be deleted (for example C:\Temp\MyFolder).
+        .EXAMPLE
+        Nekta_WipeDirectory -Directory "C:\Temp\MyFolder"
+        Deletes the directory "C:\Temp\MyFolder"
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("D")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$Directory
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Delete directory $Directory" $LogFile
+        if ( Test-Path $Directory ) {
+            try {
+                Remove-Item $Directory -Force -Recurse | Out-Null
+                Nekta_Logging "SUCCESS" "Successfully deleted the directory $Directory" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to delete the directory $Directory (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The directory $Directory does not exist. Nothing to do" $LogFile
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_DeleteFile
+# Description: delete one specific file
+#==========================================================================
+Function Nekta_DeleteFile {
+    <#
+        .SYNOPSIS
+        Delete a file
+        .DESCRIPTION
+        Delete a file
+        .PARAMETER File
+        This parameter contains the full path to the file (including the file name and file extension) that needs to be deleted (for example C:\Temp\MyFile.txt).
+        .EXAMPLE
+        Nekta_DeleteFile -File "C:\Temp\MyFile.txt"
+        Deletes the file "C:\Temp\MyFile.txt"
+        .EXAMPLE
+        Nekta_DeleteFile -File "C:\Temp\*.txt"
+        Deletes all files in the directory "C:\Temp" that have the file extension *.txt. *.txt files stored within subfolders of 'C:\Temp' are NOT deleted 
+        .EXAMPLE
+        Nekta_DeleteFile -File "C:\Temp\*.*"
+        Deletes all files in the directory "C:\Temp". This function does NOT remove any subfolders nor files within a subfolder (use the function 'Nekta_PurgeFiles' instead)
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$File
+    )
+ 
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Delete the file '$File'" $LogFile
+        if ( Test-Path $File ) {
+            try {
+                Remove-Item "$File" | Out-Null
+                Nekta_Logging "SUCCESS" "Successfully deleted the file '$File'" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to delete the file '$File' (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The file '$File' does not exist. Nothing to do" $LogFile
+        }
+    }
+ 
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_MoveDirectory
+#==========================================================================
+
+Function Nekta_MoveDirectory {
+    <#
+        .SYNOPSIS
+        Move one or more directories
+        .DESCRIPTION
+        Move one or more directories to a specified destination.
+        .PARAMETER SourceDirectories
+        Specifies the source directory(s) to move. Wildcards can be used, and UNC paths are supported.
+        .PARAMETER Destination
+        Specifies the destination path where the directory(s) should be moved. The path may include a new directory name.
+        .EXAMPLE
+        Nekta_MoveDirectory -SourceDirectories "C:\Temp\MyFolder" -Destination "C:\Temp2"
+        Moves 'C:\Temp\MyFolder' to 'C:\Temp2'.
+        .EXAMPLE
+        Nekta_MoveDirectory -SourceDirectories "C:\Temp\MyFolder" -Destination "C:\Temp2\MyRenamedFolder"
+        Moves 'C:\Temp\MyFolder' to 'C:\Temp2' and renames it to 'MyRenamedFolder'.
+        .EXAMPLE
+        Nekta_MoveDirectory -SourceDirectories "C:\Temp\*" -Destination "C:\Temp2"
+        Moves all directories from 'C:\Temp' to 'C:\Temp2'.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("S")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$SourceDirectories,
+        [Alias("D")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$Destination
+    )
+
+    begin {
+        # Log the start of the function
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        # Log the source and destination details
+        Nekta_Logging "INFO" "Move the source directory(s) '$SourceDirectories' to '$Destination'" $LogFile
+
+        # Determine the destination directory
+        if ($Destination.Contains(".")) {
+            # If $Destination contains a dot, treat it as a path with a directory name
+            $TempFolder = Split-Path -Path $Destination
+        }
+        else {
+            # Otherwise, assume it's a directory path
+            $TempFolder = $Destination
+        }
+
+        # Check if destination path exists; create it if it does not
+        Nekta_Logging "INFO" "Check if the destination path '$TempFolder' exists. If not, create it" $LogFile
+        if (Test-Path $TempFolder) {
+            Nekta_Logging "INFO" "The destination path '$TempFolder' already exists. Nothing to do" $LogFile
+        }
+        else {
+            Nekta_Logging "INFO" "The destination path '$TempFolder' does not exist" $LogFile
+            Nekta_NewDirectory -Directory $TempFolder
+        }
+
+        # Move the source directories
+        Nekta_Logging "INFO" "Start moving the source directory(s) '$SourceDirectories' to '$Destination'" $LogFile
+        try {
+            Move-Item -Path $SourceDirectories -Destination $Destination -Force
+            Nekta_Logging "SUCCESS" "Successfully moved the source directory(s) '$SourceDirectories' to '$Destination'" $LogFile
+        }
+        catch {
+            # Log the error if the move fails
+            Nekta_Logging "ERROR" "An error occurred while moving the source directory(s) '$SourceDirectories' to '$Destination'. Error: $($_.Exception.Message)" $LogFile
+            Exit 1
+        }
+    }
+
+    end {
+        # Log the end of the function
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_RenameItem
+#==========================================================================
+Function Nekta_RenameItem {
+    <#
+        .SYNOPSIS
+        Rename files and folders
+        .DESCRIPTION
+        Rename files and folders
+        .PARAMETER ItemPath
+        This parameter contains the full path to the file or folder that needs to be renamed (for example 'C:\Temp\MyOldFileName.txt' or 'C:\Temp\MyOldFolderName')
+        .PARAMETER NewName
+        This parameter contains the new name of the file or folder (for example 'MyNewFileName.txt' or 'MyNewFolderName')
+        .EXAMPLE
+        Nekta_RenameItem -ItemPath "C:\Temp\MyOldFileName.txt" -NewName "MyNewFileName.txt"
+        Renames the file "C:\Temp\MyOldFileName.txt" to "MyNewFileName.txt". The parameter 'NewName' only requires the new file name without specifying the path to the file
+        .EXAMPLE
+        Nekta_RenameItem -ItemPath "C:\Temp\MyOldFileName.txt" -NewName "MyNewFileName.rtf"
+        Renames the file "C:\Temp\MyOldFileName.txt" to "MyNewFileName.rtf". Besides changing the name of the file, the file extension is modified as well. Please make sure that the new file format is compatible with the original file format and can actually be opened after being renamed! The parameter 'NewName' only requires the new file name without specifying the path to the file
+        .EXAMPLE
+        Nekta_RenameItem -ItemPath "C:\Temp\MyOldFolderName" -NewName "MyNewFolderName"
+        Renames the folder "C:\Temp\MyOldFolderName" to "C:\Temp\MyNewFolderName". The parameter 'NewName' only requires the new folder name without specifying the path to the folder
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("I")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$ItemPath,
+        [Alias("N")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$NewName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Rename '$ItemPath' to '$NewName'" $LogFile
+
+        # Rename the item (if exist)
+        if ( Test-Path $ItemPath ) {
+            try {
+                Rename-Item -path $ItemPath -NewName $NewName | Out-Null
+                Nekta_Logging "SUCCESS" "The item '$ItemPath' was renamed to '$NewName' successfully" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to rename the item '$ItemPath' to '$NewName' (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The item '$ItemPath' does not exist. Nothing to do" $LogFile
+        }
+    }
+ 
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+###########################################################################
+#                                                                         #
+#          WINDOWS \ INSTALLATIONS AND EXECUTABLES                        #
+#                                                                         #
+###########################################################################
+
+Function Nekta_RunProcess {
+    <#
+        .SYNOPSIS
+        Execute a process
+        .DESCRIPTION
+        Execute a process
+        .PARAMETER FileName
+        This parameter contains the full path including the file name and file extension of the executable (for example C:\Temp\MyApp.exe).
+        .PARAMETER Arguments
+        This parameter contains the list of arguments to be executed together with the executable.
+        .EXAMPLE
+        Nekta_RunProcess -FileName "C:\Temp\MyApp.exe" -Arguments "-silent"
+        Executes the file 'MyApp.exe' with arguments '-silent'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$FileName,
+        [Alias("A")]
+        [Parameter(Mandatory = $false, Position = 1)][String]$Arguments
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        if ([string]::IsNullOrEmpty($Arguments)) {
+            Nekta_Logging "INFO" "Execute process '$Filename' with no arguments" $LogFile
+            $Process = Start-Process $FileName -Wait -NoNewWindow -PassThru
+        }
+        else {
+            Nekta_Logging "INFO" "Execute process '$Filename' with arguments '$Arguments'" $LogFile
+            $Process = Start-Process $FileName -ArgumentList $Arguments -Wait -NoNewWindow -PassThru
+        }
+
+        $Process.HasExited
+        $ProcessExitCode = $Process.ExitCode
+        if ($ProcessExitCode -eq 0) {
+            Nekta_Logging "SUCCESS" "The process '$Filename' ended successfully" $LogFile
+        }
+        else {
+            Nekta_Logging "ERROR" "An error occurred trying to execute the process '$Filename' (exit code: $ProcessExitCode)!" $LogFile
+            Exit 1
+        }
+    }
+ 
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_RunProcessNoWait
+#==========================================================================
+Function Nekta_RunProcessNoWait {
+    <#
+        .SYNOPSIS
+        Execute a process without wait 
+        .DESCRIPTION
+        Execute a process without wait
+        .PARAMETER FileName
+        This parameter contains the full path including the file name and file extension of the executable (for example C:\Temp\MyApp.exe).
+        .PARAMETER Arguments
+        This parameter contains the list of arguments to be executed together with the executable.
+        .EXAMPLE
+        Nekta_RunProcessNoWait -FileName "C:\Temp\MyApp.exe" -Arguments "-silent"
+        Executes the file 'MyApp.exe' with arguments '-silent'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$FileName,
+        [Alias("A")]
+        [Parameter(Mandatory = $false, Position = 1)][String]$Arguments
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        if ([string]::IsNullOrEmpty($Arguments)) {
+            Nekta_Logging "INFO" "Execute process '$Filename' with no arguments without wait." $LogFile
+            $Process = Start-Process $FileName -NoNewWindow -PassThru
+        }
+        else {
+            Nekta_Logging "INFO" "Execute process '$Filename' with arguments '$Arguments' without wait." $LogFile
+            $Process = Start-Process $FileName -ArgumentList $Arguments -NoNewWindow -PassThru
+        }
+
+        $Process.HasExited
+        $ProcessExitCode = $Process.ExitCode
+        if ($ProcessExitCode -eq 0) {
+            Nekta_Logging "SUCCESS" "The process '$Filename' ended successfully." $LogFile
+        }
+        else {
+            Nekta_Logging "ERROR" "An error occurred trying to execute the process '$Filename' (exit code: $ProcessExitCode)!" $LogFile
+            Exit 1
+        }
+    }
+ 
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+###########################################################################
+#                                                                         #
+#          WINDOWS \ LOGGING                                              #
+#                                                                         #
+###########################################################################
+
+#==========================================================================
+
+# FUNCTION Nekta_Logging
+#==========================================================================
+Function Nekta_Logging {
+    <#
+        .SYNOPSIS
+        Write text to this script's log file
+        .DESCRIPTION
+        Write text to this script's log file
+        .PARAMETER InformationType
+        This parameter contains the information type prefix. Possible prefixes and information types are:
+            I = Information
+            S = Success
+            W = Warning
+            E = Error
+            - = No status
+        .PARAMETER Text
+        This parameter contains the text (the line) you want to write to the log file. If text in the parameter is omitted, an empty line is written.
+        .PARAMETER LogFile
+        This parameter contains the full path, the file name and file extension to the log file (e.g. C:\Logs\MyApps\MylogFile.log)
+        .EXAMPLE
+        Nekta_Logging -InformationType "I" -Text "Copy files to C:\Temp" -LogFile "C:\Logs\MylogFile.log"
+        Writes a line containing information to the log file
+        .Example
+        Nekta_Logging -InformationType "E" -Text "An error occurred trying to copy files to C:\Temp (error: $($Error[0]))!" -LogFile "C:\Logs\MylogFile.log"
+        Writes a line containing error information to the log file
+        .Example
+        Nekta_Logging -InformationType "-" -Text "" -LogFile "C:\Logs\MylogFile.log"
+        Writes an empty line to the log file
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Parameter(Mandatory = $true, Position = 0)][ValidateSet("INFO", "SUCCESS", "WARNING", "ERROR", "TRACE", "I", "S", "W", "E", "T", IgnoreCase = $True)][String]$InformationType,
+        [Parameter(Mandatory = $true, Position = 1)][AllowEmptyString()][String]$Text,
+        [Parameter(Mandatory = $false, Position = 2)][String]$LogFile
+    )
+ 
+    begin {
+    }
+ 
+    process {
+        # Create new log file if it doesn't exist
+        if (!(Test-Path $LogFile)) {    
+            New-Item $LogFile -ItemType File -Force | Out-Null
+        }
+
+        $DateTime = (Get-Date -format "dd-MM-yyyy HH:mm:ss")
+
+        # Pad the InformationType to align with the longest type (e.g., WARNING)
+        $FormattedType = ($InformationType.ToUpper()).PadRight(7) # Adjust length to 8 (length of 'WARNING')
+
+        if ($Text -eq "") {
+            Add-Content $LogFile -value ("") # Write an empty line
+        }
+        else {
+            # Write formatted entry to log file
+            $LogEntry = "$DateTime $FormattedType :....$Text"
+            Add-Content $LogFile -value $LogEntry
+        }
+        
+        # Display formatted output to the console with colors
+        switch ($InformationType.ToUpper()) {
+            "I" { Write-Host "$FormattedType :....$Text" -ForegroundColor Yellow }
+            "INFO" { Write-Host "$FormattedType :....$Text" -ForegroundColor Yellow }
+            "E" { Write-Host "$FormattedType :....$Text" -ForegroundColor Red }
+            "ERROR" { Write-Host "$FormattedType :....$Text" -ForegroundColor Red }
+            "S" { Write-Host "$FormattedType :....$Text" -ForegroundColor Green }
+            "SUCCESS" { Write-Host "$FormattedType :....$Text" -ForegroundColor Green }
+            "W" { Write-Host "$FormattedType :....$Text" -ForegroundColor Blue }
+            "WARNING" { Write-Host "$FormattedType :....$Text" -ForegroundColor Blue }
+            "T" { Write-Host "$FormattedType :....$Text" }
+            "TRACE" { Write-Host "$FormattedType :....$Text" }
+        }
+    }
+ 
+    end {
+    }
+}
+
+###########################################################################
+#                                                                         #
+#          WINDOWS \ REGISTRY                                             #
+#                                                                         #
+###########################################################################
+
+# FUNCTION Nekta_NewRegKey
+#==========================================================================
+Function Nekta_NewRegKey {
+    <#
+        .SYNOPSIS
+        Create a registry key
+        .DESCRIPTION
+        Create a registry key
+        .PARAMETER RegKeyPath
+        This parameter contains the registry path, for example 'hklm:\Software\MyApp'
+        .EXAMPLE
+        Nekta_NewRegKey -RegKeyPath "hklm:\Software\MyApp"
+        Creates the new registry key 'hklm:\Software\MyApp'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("K")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$RegKeyPath
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Create registry key '$RegKeyPath'" $LogFile
+        if ( Test-Path $RegKeyPath ) {
+            Nekta_Logging "INFO" "The registry key '$RegKeyPath' already exists. Nothing to do" $LogFile
+        }
+        else {
+            try {
+                New-Item -Path $RegkeyPath -Force | Out-Null
+                Nekta_Logging "SUCCESS" "The registry key '$RegKeyPath' was created successfully" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to create the registry key '$RegKeyPath' (exit code: $($Error[0]))!" $LogFile
+                Nekta_Logging "INFO" "Note: define the registry path as follows: hklm:\Software\MyApp" $LogFile
+                Exit 1
+            }
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_DeleteRegKeyValue
+#==========================================================================
+Function Nekta_DeleteRegKeyValue {
+    <#
+        .SYNOPSIS
+        Delete a registry value. This can be a value of any type (e.g. REG_SZ, DWORD, etc.)
+        .DESCRIPTION
+        Delete a registry value. This can be a value of any type (e.g. REG_SZ, DWORD, etc.)
+        .PARAMETER RegKeyPath
+        This parameter contains the registry path (for example hklm:\SOFTWARE\MyApp)
+        .PARAMETER RegValueName
+        This parameter contains the name of the registry value that is to be deleted (for example 'MyValue')
+        .EXAMPLE
+        Nekta_DeleteRegKeyValue -RegKeyPath "hklm:\SOFTWARE\MyApp" -RegValueName "MyValue"
+        Deletes the registry value 'MyValue' from the registry key 'hklm:\SOFTWARE\MyApp'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("K")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$RegKeyPath,
+        [Alias("N")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$RegValueName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Delete registry value '$RegValueName' in '$RegKeyPath'" $LogFile
+
+        # Check if the registry value that is to be renamed actually exists
+        $RegValueExists = $False
+        try {
+            Get-ItemProperty -Path $RegKeyPath | Select-Object -ExpandProperty $RegValueName | Out-Null
+            $RegValueExists = $True
+        }
+        catch {
+            Nekta_Logging "INFO" "The registry value '$RegValueName' in the registry key '$RegKeyPath' does NOT exist. Nothing to do" $LogFile
+        }
+
+        # Delete the registry value (if exist)
+        if ( $RegValueExists -eq $True ) {
+            try {
+                Remove-ItemProperty -Path $RegKeyPath -Name $RegValueName | Out-Null
+                Nekta_Logging "SUCCESS" "The registry value '$RegValueName' in the registry key '$RegKeyPath' was deleted successfully" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to delete the registry value '$RegValueName' in the registry key '$RegKeyPath' to '$NewName' (exit code: $($Error[0]))!" $LogFile
+                Nekta_Logging "INFO" "Note: define the registry path as follows: hklm:\SOFTWARE\MyApp" $LogFile
+                Exit 1
+            }
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION ImportRegFile
+#==========================================================================
+Function Nekta_ImportRegFile {
+    <#
+        .SYNOPSIS
+        Import a registry (*.reg) file into the registry
+        .DESCRIPTION
+        Import a registry (*.reg) file into the registry
+        .PARAMETER FileName
+        This parameter contains the full path, file name and file extension of the registry file, for example "C:\Temp\MyRegFile.reg"
+        .EXAMPLE
+        Nekta_ImportRegFile-FileName "C:\Temp\MyRegFile.reg"
+        Imports registry settings from the file "C:\Temp\MyRegFile.reg"
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$FileName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Import registry file '$FileName'" $LogFile
+        if ( Test-Path $FileName ) {
+            try {
+                $process = start-process -FilePath "reg.exe" -ArgumentList "IMPORT ""$FileName""" -WindowStyle Hidden -Wait -PassThru
+                if ( $process.ExitCode -eq 0 ) {
+                    Nekta_Logging "SUCCESS" "The registry settings were imported successfully (exit code: $($process.ExitCode))" $LogFile
+                }
+                else {
+                    Nekta_Logging "ERROR" "An error occurred trying to import registry settings (exit code: $($process.ExitCode))" $LogFile				
+                    Exit 1
+                }
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to import the registry file '$FileName' (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+        else {
+            Nekta_Logging "ERROR" "The file '$FileName' does NOT exist!" $LogFile
+            Exit 1
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_RenameRegKey
+#==========================================================================
+Function Nekta_RenameRegKey {
+    <#
+        .SYNOPSIS
+        Rename a registry key (for registry values use the function 'Nekta_RenameRegKeyValue' instead)
+        .DESCRIPTION
+        Rename a registry key (for registry values use the function 'Nekta_RenameRegKeyValue' instead)
+        .PARAMETER RegKeyPath
+        This parameter contains the registry path that needs to be renamed (for example 'hklm:\Software\MyRegKey')
+        .PARAMETER NewName
+        This parameter contains the new name of the last part of the registry path that is to be renamed (for example 'MyRegKeyNew')
+        .EXAMPLE
+        Nekta_RenameRegKey -RegKeyPath "hklm:\Software\MyRegKey" -NewName "MyRegKeyNew"
+        Renames the registry path "hklm:\Software\MyRegKey" to "hklm:\Software\MyRegKeyNew". The parameter 'NewName' only requires the last part of the registry path without specifying the entire registry path
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("K")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$RegKeyPath,
+        [Alias("N")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$NewName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Rename '$RegKeyPath' to '$NewName'" $LogFile
+
+        # Rename the registry path (if exist)
+        if ( Test-Path $RegKeyPath ) {
+            try {
+                Rename-Item -path $RegKeyPath -NewName $NewName | Out-Null
+                Nekta_Logging "SUCCESS" "The registry path '$RegKeyPath' was renamed to '$NewName' successfully" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to rename the registry path '$RegKeyPath' to '$NewName' (exit code: $($Error[0]))!" $LogFile
+                Nekta_Logging "INFO" "Note: define the registry path as follows: hklm:\SOFTWARE\MyApp" $LogFile
+                Exit 1
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The registry path '$RegKeyPath' does not exist. Nothing to do" $LogFile
+        }
+    }
+ 
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_RenameRegKeyValue
+# Note: this function works for registry values only. To rename a registry key, use the function 'Nekta_RenameRegKey'.
+#==========================================================================
+Function Nekta_RenameRegKeyValue {
+    <#
+        .SYNOPSIS
+        Rename a registry value (all data types). To rename a registry key, use the function 'Nekta_RenameRegKey'
+        .DESCRIPTION
+        Rename a registry value (all data types). To rename a registry key, use the function 'Nekta_RenameRegKey'
+        .PARAMETER RegKeyPath
+        This parameter contains the full registry path (for example 'hklm:\SOFTWARE\MyApp')
+        .PARAMETER RegValueName
+        This parameter contains the name of the registry value that needs to be renamed (for example 'MyRegistryValue')
+        .PARAMETER NewName
+        This parameter contains the new name of the registry value that is to be renamed (for example 'MyRegistryValueNewName')
+        .EXAMPLE
+        Nekta_RenameRegKeyValue -RegKeyPath "hklm:\Software\MyRegKey" -RegValueName "MyRegistryValue" -NewName "MyRegistryValueNewName"
+        Renames the registry value 'MyRegistryValue' in the registry key "hklm:\Software\MyRegKey" to 'MyRegistryValueNewName'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("K")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$RegKeyPath,
+        [Alias("V")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$RegValueName,
+        [Alias("N")]
+        [Parameter(Mandatory = $true, Position = 2)][String]$NewName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Rename the registry value '$RegValueName' in the registry key '$RegKeyPath' to '$NewName'" $LogFile
+
+        # Check if the registry value that is to be renamed actually exists
+        $RegValueExists = $False
+        try {
+            Get-ItemProperty -Path $RegKeyPath | Select-Object -ExpandProperty $RegValueName | Out-Null
+            $RegValueExists = $True
+        }
+        catch {
+            Nekta_Logging "INFO" "The registry value '$RegValueName' in the registry key '$RegKeyPath' does NOT exist. Nothing to do" $LogFile
+        }
+
+        # Rename the registry value (if exist)
+        if ( $RegValueExists -eq $True ) {
+            try {
+                Rename-ItemProperty -Path $RegKeyPath -Name $RegValueName -NewName $NewName | Out-Null
+                Nekta_Logging "SUCCESS" "The registry value '$RegValueName' in the registry key '$RegKeyPath' was successfully renamed to '$NewName'" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to rename the registry value '$RegValueName' in the registry key '$RegKeyPath' to '$NewName' (exit code: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+    }
+ 
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_SetRegKeyValue
+#==========================================================================
+Function Nekta_SetRegKeyValue {
+    <#
+        .SYNOPSIS
+        Set a registry value
+        .DESCRIPTION
+        Set a registry value
+        .PARAMETER RegKeyPath
+        This parameter contains the registry path, for example 'hklm:\Software\MyApp'
+        .PARAMETER RegValueName
+        This parameter contains the name of the new registry value, for example 'MyValue'
+        .PARAMETER RegValue
+        This parameter contains the value of the new registry entry, for example '1'
+        .PARAMETER Type
+        This parameter contains the type. Possible options are: String | Binary | DWORD | QWORD | MultiString | ExpandString
+        .EXAMPLE
+        Nekta_SetRegKeyValue -RegKeyPath "hklm:\Software\MyApp" -RegValueName "MyStringValue" -RegValue "Enabled" -Type "String"
+        Creates a new string value called 'MyStringValue' with the value of 'Enabled'
+        .Example
+        Nekta_SetRegKeyValue -RegKeyPath "hklm:\Software\MyApp" -RegValueName "MyBinaryValue" -RegValue "01" -Type "Binary"
+        Creates a new binary value called 'MyBinaryValue' with the value of '01'
+        .Example
+        Nekta_SetRegKeyValue -RegKeyPath "hklm:\Software\MyApp" -RegValueName "MyDWORDValue" -RegValue "1" -Type "DWORD"
+        Creates a new DWORD value called 'MyDWORDValue' with the value of 00000001 (or simply 1)
+        .Example
+        Nekta_SetRegKeyValue -RegKeyPath "hklm:\Software\MyApp" -RegValueName "MyQWORDValue" -RegValue "1" -Type "QWORD"
+        Creates a new QWORD value called 'MyQWORDValue' with the value of 1
+        .Example
+        Nekta_SetRegKeyValue -RegKeyPath "hklm:\Software\MyApp" -RegValueName "MyMultiStringValue" -RegValue "Value1","Value2","Value3" -Type "MultiString"
+        Creates a new multistring value called 'MyMultiStringValue' with the value of 'Value1 Value2 Value3'
+        .Example
+        Nekta_SetRegKeyValue -RegKeyPath "hklm:\Software\MyApp" -RegValueName "MyExpandStringValue" -RegValue "MyValue" -Type "ExpandString"
+        Creates a new expandstring value called 'MyExpandStringValue' with the value of 'MyValue'
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("K")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$RegKeyPath,
+        [Alias("V")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$RegValueName,
+        [Alias("KV")]
+        [Parameter(Mandatory = $false, Position = 2)][String[]]$RegValue = "",
+        [Alias("T")]
+        [Parameter(Mandatory = $true, Position = 3)][String]$Type
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Set registry value $RegValueName = $RegValue (type $Type) in $RegKeyPath" $LogFile
+
+        # Create the registry key in case it does not exist
+        if ( !( Test-Path $RegKeyPath ) ) {
+            Nekta_NewRegKey $RegKeyPath
+        }
+    
+        # Create the registry value
+        try {
+            if ( ( "String", "ExpandString", "DWord", "QWord" ) -contains $Type ) {
+                New-ItemProperty -Path $RegKeyPath -Name $RegValueName -Value $RegValue[0] -PropertyType $Type -Force | Out-Null
+            }
+            else {
+                New-ItemProperty -Path $RegKeyPath -Name $RegValueName -Value $RegValue -PropertyType $Type -Force | Out-Null
+            }
+            Nekta_Logging "SUCCESS" "The registry value $RegValueName = $RegValue (type $Type) in $RegKeyPath was set successfully" $LogFile
+        }
+        catch {
+            Nekta_Logging "ERROR" "An error occurred trying to set the registry value $RegValueName = $RegValue (type $Type) in $RegKeyPath" $LogFile
+            Nekta_Logging "INFO" "Note: define the registry path as follows: hklm:\Software\MyApp" $LogFile
+            Exit 1
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+###########################################################################
+#                                                                         #
+#          WINDOWS \ SERVICES                                             #
+#                                                                         #
+###########################################################################
+
+# FUNCTION Nekta_ModifyStartupService
+# Note: set/change the startup type of a service. Posstible options are: Boot, System, Automatic, Manual and Disabled
+#==========================================================================
+Function Nekta_ModifyStartupService {
+    <#
+        .SYNOPSIS
+        Change the startup type of a service
+        .DESCRIPTION
+        Change the startup type of a service
+        .PARAMETER ServiceName
+        This parameter contains the name of the service (not the display name!) to stop, for example 'Spooler' or 'TermService'. Depend services are stopped automatically as well.
+        .PARAMETER StartupType
+        This parameter contains the required startup type of the service. Possible values are: Boot | System | Automatic | Manual | Disabled
+        .EXAMPLE
+        Nekta_ModifyStartupService -ServiceName "Spooler" -StartupType "Disabled"
+        Disables the service 'Spooler' (display name: 'Print Spooler')
+        .EXAMPLE
+        Nekta_ModifyStartupService -ServiceName "Spooler" -StartupType "Manual"
+        Sets the startup type of the service 'Spooler' to 'manual' (display name: 'Print Spooler')
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("S")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$ServiceName,
+        [Alias("T")]
+        [Parameter(Mandatory = $true, Position = 1)][String]$StartupType
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Change the startup type of the service '$ServiceName' to '$StartupType'" $LogFile
+
+        # Check if the service exists    
+        If ( Get-Service $ServiceName -erroraction silentlycontinue) {
+            # Change the startup type
+            try {
+                Set-Service -Name $ServiceName -StartupType $StartupType | Out-Null
+                Nekta_Logging "INFO" "The startup type of the service '$ServiceName' was successfully changed to '$StartupType'" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "An error occurred trying to change the startup type of the service '$ServiceName' to '$StartupType' (error: $($Error[0]))!" $LogFile
+                Exit 1
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The service '$ServiceName' does not exist. Nothing to do" $LogFile
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_StopService
+#==========================================================================
+Function Nekta_StopService {
+    <#
+        .SYNOPSIS
+        Stop a service (including depend services)
+        .DESCRIPTION
+        Stop a service (including depend services)
+        .PARAMETER ServiceName
+        This parameter contains the name of the service (not the display name!) to stop, for example 'Spooler' or 'TermService'. Depend services are stopped automatically as well.
+        Depend services do not need to be specified separately. The function will retrieve them automatically.
+        .EXAMPLE
+        Nekta_StopService -ServiceName "Spooler"
+        Stops the service 'Spooler' (display name: 'Print Spooler')
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("S")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$ServiceName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Stop service '$ServiceName' ..." $LogFile
+
+        # Check if the service exists    
+        If ( Get-Service $ServiceName -erroraction silentlycontinue) {
+            # Stop the main service 
+            If ( ((Get-Service $ServiceName -ErrorAction SilentlyContinue).Status) -eq "Running" ) {
+        
+                # Check for depend services and stop them first
+                Nekta_Logging "INFO" "Check for depend services for service '$ServiceName' and stop them" $LogFile
+                $DependServices = (( Get-Service -Name $ServiceName -ErrorAction SilentlyContinue).DependentServices).name
+
+                If ($DependServices.Count -gt 0 ) {
+                    foreach ($Service in $DependServices) {
+                        Nekta_Logging "INFO" "Depend service found: $Service" $LogFile
+                        Nekta_StopService -ServiceName $Service
+                    }
+                }
+                else {
+                    Nekta_Logging "INFO" "No depend service found" $LogFile
+                }
+
+                # Stop the (depend) service
+                try {
+                    Stop-Service $ServiceName | Out-Null
+                }
+                catch {
+                    Nekta_Logging "ERROR" "An error occurred trying to stop the service $ServiceName (error: $($Error[0]))!" $LogFile
+                    Exit 1
+                }
+
+                # Check if the service stopped successfully
+                If (((Get-Service $ServiceName -ErrorAction SilentlyContinue).Status) -eq "Stopped" ) {
+                    Nekta_Logging "INFO" "The service $ServiceName was stopped successfully" $LogFile
+                }
+                else {
+                    Nekta_Logging "ERROR" "An error occurred trying to stop the service $ServiceName (error: $($Error[0]))!" $LogFile
+                    Exit 1
+                }
+            }
+            else {
+                Nekta_Logging "INFO" "The service '$ServiceName' is not running" $LogFile
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The service '$ServiceName' does not exist. Nothing to do" $LogFile
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+# FUNCTION Nekta_StartingService 
+#==========================================================================
+Function Nekta_StartingService {
+    <#
+        .SYNOPSIS
+        Starts a service (including depend services)
+        .DESCRIPTION
+        Starts a service (including depend services)
+        .PARAMETER ServiceName
+        This parameter contains the name of the service (not the display name!) to start, for example 'Spooler' or 'TermService'. Depend services are started automatically as well.
+        Depend services do not need to be specified separately. The function will retrieve them automatically.
+        .EXAMPLE
+        Nekta_StartingService -ServiceName "Spooler"
+        Starts the service 'Spooler' (display name: 'Print Spooler')
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("S")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$ServiceName
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+ 
+    process {
+        Nekta_Logging "INFO" "Start service $ServiceName ..." $LogFile
+
+        # Check if the service exists    
+        If ( Get-Service $ServiceName -erroraction silentlycontinue) {
+            # Start the main service 
+            If (((Get-Service $ServiceName -ErrorAction SilentlyContinue).Status) -eq "Running" ) {
+                Nekta_Logging "INFO" "The service $ServiceName is already running" $LogFile
+            }
+            else {
+                # Check for depend services and start them first
+                Nekta_Logging "INFO" "Check for depend services for service $ServiceName and start them" $LogFile
+                $DependServices = ( ( Get-Service -Name $ServiceName -ErrorAction SilentlyContinue ).DependentServices ).name
+
+                If ( $DependServices.Count -gt 0 ) {
+                    foreach ( $Service in $DependServices ) {
+                        Nekta_Logging "INFO" "Depend service found: $Service" $LogFile
+                        StartService($Service)
+                    }
+                }
+                else {
+                    Nekta_Logging "INFO" "No depend service found" $LogFile
+                }
+
+                # Start the (depend) service
+                try {
+                    Start-Service $ServiceName | Out-Null
+                }
+                catch {
+                    Nekta_Logging "ERROR" "An error occurred trying to start the service $ServiceName (error: $($Error[0]))!" $LogFile
+                    Exit 1
+                }
+
+                # Check if the service started successfully
+                If (((Get-Service $ServiceName -ErrorAction SilentlyContinue).Status) -eq "Running" ) {
+                    Nekta_Logging "INFO" "The service $ServiceName was started successfully" $LogFile
+                }
+                else {
+                    Nekta_Logging "ERROR" "An error occurred trying to start the service $ServiceName (error: $($Error[0]))!" $LogFile
+                    Exit 1
+                }
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "The service $ServiceName does not exist. Nothing to do" $LogFile
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+#==========================================================================
+
+###########################################################################
+#                                                                         #
+#          WINDOWS \ SYSTEM                                               #
+#                                                                         #
+###########################################################################
+
+#==========================================================================
+
+# FUNCTION Nekta_WipePrefetch
+#==========================================================================
+Function Nekta_WipePrefetch {
+    <#
+        .SYNOPSIS
+        Clear all files from the Windows Prefetch folder.
+        .DESCRIPTION
+        This function deletes all files in the Windows Prefetch folder without removing the folder itself.
+        .EXAMPLE
+        Nekta_WipePrefetch
+        Clears all files in the Prefetch folder.
+    #>
+    [CmdletBinding()]
+    Param()
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+        $PrefetchFolder = "C:\Windows\Prefetch"
+        Nekta_Logging "INFO" "Target folder: $PrefetchFolder" $LogFile
+    }
+
+    process {
+        # Check if the Prefetch folder exists
+        if (!(Test-Path $PrefetchFolder)) {
+            Nekta_Logging "ERROR" "The Prefetch folder does not exist at the path: $PrefetchFolder" $LogFile
+            Exit 1
+        }
+
+        # Get all files in the Prefetch folder
+        $Files = Get-ChildItem -Path $PrefetchFolder -File
+
+        # Delete each file
+        if ($Files.Count -gt 0) {
+            Nekta_Logging "INFO" "Found $($Files.Count) files to delete" $LogFile
+            foreach ($File in $Files) {
+                try {
+                    Remove-Item -Path $File.FullName -Force
+                    Nekta_Logging "SUCCESS" "Deleted file: $($File.FullName)" $LogFile
+                }
+                catch {
+                    Nekta_Logging "ERROR" "Failed to delete file: $($File.FullName). Error: $_" $LogFile
+                }
+            }
+        }
+        else {
+            Nekta_Logging "INFO" "No files found in the Prefetch folder" $LogFile
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_StartStopProcess
+#==========================================================================
+Function Nekta_StartStopProcess {
+    <#
+        .SYNOPSIS
+        Start or stop a process.
+        .DESCRIPTION
+        This function starts or stops a specified process based on the given action.
+        .PARAMETER ProcessName
+        The name of the process to start or stop.
+        .PARAMETER Action
+        Defines whether to 'Start' or 'Stop' the process.
+        .EXAMPLE
+        Nekta_StartStopProcess -ProcessName "notepad" -Action "Start"
+        Starts the notepad process.
+        .EXAMPLE
+        Nekta_StartStopProcess -ProcessName "notepad" -Action "Stop"
+        Stops the notepad process.
+    #>
+    [CmdletBinding()]
+    param (
+        [Alias("P")]
+        [Parameter(Mandatory = $true)][string]$ProcessName,
+        [Alias("A")]
+        [Parameter(Mandatory = $true)][ValidateSet('Start', 'Stop')][string]$Action
+    )
+
+    begin {
+        # Start function logging
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+        Nekta_Logging "INFO" "Process Name: $ProcessName" $LogFile
+        Nekta_Logging "INFO" "Action: $Action" $LogFile
+    }
+
+    process {
+        try {
+            if ($Action -eq "Start") {
+                # Start the process
+                Nekta_Logging "INFO" "Starting process $ProcessName" $LogFile
+                Start-Process -FilePath $ProcessName -ErrorAction Stop
+                Nekta_Logging "SUCCESS" "Process $ProcessName started successfully." $LogFile
+            }
+            elseif ($Action -eq "Stop") {
+                # Stop the process
+                $Process = Get-Process -Name $ProcessName -ErrorAction Stop
+                if ($Process) {
+                    Nekta_Logging "INFO" "Stopping process $ProcessName" $LogFile
+                    Stop-Process -Name $ProcessName -Force -ErrorAction Stop
+                    Nekta_Logging "SUCCESS" "Process $ProcessName stopped successfully." $LogFile
+                }
+            }
+        }
+        catch {
+            Nekta_Logging "ERROR" "Error during $Action of process $ProcessName. Error: $_" $LogFile
+            throw
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+#
+# FUNCTION Nekta_FindPath
+#==========================================================================
+Function Nekta_FindPath {
+    <#
+        .SYNOPSIS
+        Checks if a specified path exists.
+        .DESCRIPTION
+        This function checks whether a given file or directory path exists using Test-Path.
+        .PARAMETER Path
+        The path to be checked.
+        .EXAMPLE
+        Nekta_FindPath -Path "C:\Temp\MyFile.txt"
+        Returns: True if the path exists, False otherwise.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("P")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$Path
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        Nekta_Logging "INFO" "Checking if the path '$Path' exists" $LogFile
+        $PathExists = Test-Path -Path $Path
+
+        if ($PathExists) {
+            Nekta_Logging "SUCCESS" "The path '$Path' exists." $LogFile
+        }
+        else {
+            Nekta_Logging "WARNING" "The path '$Path' does not exist." $LogFile
+        }     
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_ResolvePath
+#==========================================================================
+
+Function Nekta_ResolvePath {
+    <#
+        .SYNOPSIS
+        Resolves a given path (Path or LiteralPath) and checks if it exists.
+        .DESCRIPTION
+        This function resolves a given file or directory path using Resolve-Path. It can take either a regular path or a literal path.
+        .PARAMETER Path
+        The path to be resolved and checked. This is a regular path where characters like wildcards (*) are interpreted.
+        .PARAMETER LiteralPath
+        A literal path to be resolved and checked, where characters like wildcards (*) are treated as literal characters.
+        .EXAMPLE
+        Nekta_ResolvePath -Path "C:\Temp\MyFile.txt"
+        Checks if "C:\Temp\MyFile.txt" exists and returns the resolved path if it does.
+        .EXAMPLE
+        Nekta_ResolvePath -LiteralPath "C:\Path[With]SpecialChars"
+        Checks if "C:\Path[With]SpecialChars" exists and returns the resolved path if it does.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("P")]
+        [Parameter(ParameterSetName = "Path", Mandatory = $true, Position = 0)]
+        [String]$Path,
+
+        [Alias("LP")]
+        [Parameter(ParameterSetName = "LiteralPath", Mandatory = $true, Position = 0)]
+        [String]$LiteralPath
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        # Resolves the path based on the parameter set
+        try {
+            if ($PSCmdlet.ParameterSetName -eq "Path") {
+                Nekta_Logging "INFO" "Resolving path '$Path'" $LogFile
+                $ResolvedPath = Resolve-Path -Path $Path -ErrorAction Stop
+            }
+            elseif ($PSCmdlet.ParameterSetName -eq "LiteralPath") {
+                Nekta_Logging "INFO" "Resolving literal path '$LiteralPath'" $LogFile
+                $ResolvedPath = Resolve-Path -LiteralPath $LiteralPath -ErrorAction Stop
+            }
+
+            Nekta_Logging "SUCCESS" "The resolved path is '$ResolvedPath'" $LogFile            
+        }
+        catch {
+            Nekta_Logging "WARNING" "The specified path could not be resolved." $LogFile
+           
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+
+#==========================================================================
+#
+# FUNCTION Nekta_GetFilename
+#==========================================================================
+Function Nekta_GetFilename {
+    <#
+        .SYNOPSIS
+        Get the name of any file.
+        .DESCRIPTION
+        This function get the name of any file.
+        .PARAMETER File
+        The file to be checked.
+        .EXAMPLE
+        Nekta_GetFileName -File "C:\Temp\MyFile.txt"
+        Returns: The name of file: MyFile.txt.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$File
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        Nekta_Logging "INFO" "Getting name from file '$File'" $LogFile
+        $fileName = [System.IO.Path]::GetFileName($File)
+        return $fileName
+
+        if ($fileName) {
+            Nekta_Logging "SUCCESS" "The name of file: '$filename'." $LogFile
+        }
+        else {
+            Nekta_Logging "WARNING" "The file '$fileName' does not exist." $LogFile
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+
+
+#==========================================================================
+
+# FUNCTION Nekta_MSIInstall 
+#==========================================================================
+
+Function Nekta_MSIInstall {
+    <#
+        .SYNOPSIS
+        Installs an MSI package
+        .DESCRIPTION
+        Installs an MSI package with a default silent mode. If additional arguments are passed, they will be combined with the silent installation options.
+        .PARAMETER MSIPath
+        The full path to the MSI package.
+        .PARAMETER AdditionalArguments
+        Additional arguments for the MSI installation. By default, uses silent installation arguments.
+        .EXAMPLE
+        Nekta_MSIInstall -File "C:\Path\To\Installer.msi"
+        Installs the MSI package silently.
+        .EXAMPLE
+        Nekta_MSIInstall -File "C:\Path\To\Installer.msi" -AdditionalArguments "/norestart"
+        Installs the MSI package silently with additional arguments to prevent restart.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)]
+        [String]$File,                
+        [Alias("A")]
+        [Parameter(Mandatory = $false, Position = 1)]
+        [String]$AdditionalArguments
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+    
+    process {
+        $FileName = ($File.Split("\"))[-1]
+        $FileExt = $FileName.SubString(($FileName.Length) - 3, 3)        
+        $InstallType = "Install"
+
+        $logInstall = Join-path $LogDir ("$($InstallType)_$($FileName.Substring(0,($FileName.Length)-4))_$($FileExt).log")
+
+        # Logging        
+        Nekta_Logging "INFO" "File name: $FileName" $LogFile
+        Nekta_Logging "INFO" "File full path: $File" $LogFile
+ 
+        # Check if the installation file exists
+        if (!(Test-Path -Path $File)) {    
+            Nekta_Logging "ERROR" "The file '$File' does not exist!" $LogFile
+            Exit 1
+        }
+         
+        # Install the MSI          
+        Nekta_Logging "INFO" "Start the installation" $LogFile
+        
+        # Define silent installation arguments
+        $DefaultArguments = "/quiet /norestart /l*v ""$logInstall"""
+        
+        # Combine default arguments with any additional arguments provided
+        if ([string]::IsNullOrEmpty($AdditionalArguments)) {
+            $FinalArguments = $DefaultArguments
+            Nekta_Logging "INFO" "Installin of '$File' with default arguments '$FinalArguments'" $LogFile
+        }
+        else {
+            $FinalArguments = "$DefaultArguments $AdditionalArguments"
+            Nekta_Logging "INFO" "Installing '$File' with combined arguments '$FinalArguments'" $LogFile
+        }
+
+        # Run the MSI installation      
+        $Process = Start-Process "msiexec.exe" -ArgumentList "/i `"$File`" $FinalArguments" -Wait -NoNewWindow -PassThru
+
+        # Check exit code
+        $ProcessExitCode = $Process.ExitCode
+        switch ($ProcessExitCode) {        
+            0 { Nekta_Logging "SUCCESS" "The software was installed successfully (exit code: 0)" $LogFile }
+            3 { Nekta_Logging "SUCCESS" "The software was installed successfully (exit code: 3)" $LogFile }
+            1603 { Nekta_Logging "ERROR" "A fatal error occurred (exit code: 1603). Some applications throw this error when the software is already (correctly) installed! Please check." $LogFile }
+            1605 { Nekta_Logging "INFO" "The software is not currently installed on this machine (exit code: 1605)" $LogFile }
+            1619 { 
+                Nekta_Logging "ERROR" "The installation files cannot be found. The PS1 script should be in the root directory and all source files in the subdirectory 'Files' (exit code: 1619)" $LogFile 
+                Exit 1
+            }
+            3010 { Nekta_Logging "WARNING" "A reboot is required (exit code: 3010)!" $LogFile }
+            default { 
+                Nekta_Logging "ERROR" "The installation ended in an error (exit code: $ProcessExitCode)!" $LogFile
+                Exit 1
+            }
+        }        
+    }
+    
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_SetupInstall
+#==========================================================================
+
+Function Nekta_SetupInstall {
+    <#
+        .SYNOPSIS
+        Execute an EXE file with or without arguments.
+        .DESCRIPTION
+        Executes an EXE file with or without provided arguments.
+        .PARAMETER EXEPath
+        The full path to the executable file (e.g., C:\Temp\MyApp.exe).
+        .PARAMETER Arguments
+        Optional arguments to pass to the executable.
+        .EXAMPLE
+        Nekta_SetupInstall -File "C:\Temp\MyApp.exe" -Arguments "/silent /install"
+        Executes 'MyApp.exe' with the specified arguments.
+    #>
+    [CmdletBinding()]
+    Param( 
+        [Alias("F")]
+        [Parameter(Mandatory = $true, Position = 0)][String]$File,
+        [Alias("A")]
+        [Parameter(Mandatory = $false, Position = 1)][String]$Arguments
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+
+    process {
+        $FileName = ($File.Split("\"))[-1]
+
+        # Logging        
+        Nekta_Logging "INFO" "File name: $FileName" $LogFile
+        Nekta_Logging "INFO" "File full path: $File" $LogFile
+ 
+        # Check if the installation file exists
+        if (!(Test-Path -Path $File)) {    
+            Nekta_Logging "ERROR" "The file '$File' does not exist!" $LogFile
+            Exit 1
+        }
+         
+        # Install the MSI          
+        Nekta_Logging "INFO" "Start the installation" $LogFile
+        
+        if ([string]::IsNullOrEmpty($Arguments)) {
+            Nekta_Logging "INFO" "Installing '$File' with no arguments" $LogFile
+            $Process = Start-Process -FilePath $File -Wait -NoNewWindow -PassThru
+        }
+        else {
+            Nekta_Logging "INFO" "Installing '$File' with arguments '$Arguments'" $LogFile
+            $Process = Start-Process -FilePath $File -ArgumentList $Arguments -Wait -NoNewWindow -PassThru
+        }
+
+        # Checking if the process exited successfully
+        $ProcessExitCode = $Process.ExitCode
+        if ($ProcessExitCode -eq 0) {
+            Nekta_Logging "SUCCESS" "The process '$File' completed successfully" $LogFile
+        }
+        else {
+            Nekta_Logging "ERROR" "An error occurred while executing '$File' (exit code: $ProcessExitCode)!" $LogFile
+            Exit 1
+        }
+    }
+
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }    
 }
 
-function Install-NotepadPlusPlus {
-    $notepadPlusPlusZipFile = Get-ChildItem -Path $AppsDir -Filter "notepad*.zip" -Recurse -ErrorAction SilentlyContinue
-    $ExtractDir = "$Laragon\notepad++"
+#==========================================================================
 
-    if ($notepadPlusPlusZipFile -and $notepadPlusPlusZipFile.FullName -is [string]) {
-        Nekta_Logging INFO "Arquivo encontrado: $($notepadPlusPlusZipFile.Name). Descompactando para $ExtractDir" $LogFile
-        Nekta_Logging INFO $notepadPlusPlusZipFile.Name $LogFile
-        Nekta_UnzipArchive -F $notepadPlusPlusZipFile.FullName -D $ExtractDir -P
+# FUNCTION Nekta_ISOSetupInstall
+#==========================================================================
+Function Nekta_ISOSetupInstall {
+    <#
+        .SYNOPSIS
+        Execute an EXE file with or without arguments located on a ISO image.
+        .DESCRIPTION
+        Executes an EXE file with or without provided arguments located on a ISO image.
+        .PARAMETER ISO
+        The full path to the ISO imae (e.g. C:\Temp\MyApp.iso)
+        .PARAMETER EXEName
+        The full name to the executable file (e.g., MyApp.exe).
+        .PARAMETER ExeArgs
+        Optional arguments to pass to the executable.
+        .EXAMPLE
+        Nekta_ISOSetupInstall -ISO "C:\Temp\MyApp.iso" N "MyApp.exe" -Arguments "/silent /install"
+        Executes 'MyApp.exe' located on a iso image, with the specified arguments 
+    #>
+    param (
+        [parameter(Mandatory = $True)]
+        [Alias("I")]
+        [string] $ISO,  
+        [parameter(Mandatory = $True)]
+        [Alias("N")]
+        [string] $ExeName,  		
+        [Alias("A")]
+        [parameter(Mandatory = $False)]
+        [string] $ExeArgs = ""
+    )
+
+    Nekta_Logging "INFO" "Mounting $ISO." $LogFile
+    Mount-DiskImage -ImagePath $ISO -ErrorAction Stop
+    Nekta_Logging "SUCCESS" "$ISO mounted successfully" $LogFile
+
+    $driveLetter = (Get-DiskImage $ISO | Get-Volume).DriveLetter   
+
+    if ($driveLetter) {
+        $exeFullPath = "$($driveLetter):\$ExeName"      
+       
+        if (Nekta_FindPath -P $exeFullPath) {
+            if ([string]::IsNullOrEmpty($ExeArgs)) {
+                Start-Process -FilePath $exeFullPath -Wait -NoNewWindow -PassThru                
+            }
+            else {
+                Start-Process -FilePath $exeFullPath -ArgumentList $ExeArgs -Wait -NoNewWindow -PassThru
+            }
+        }
+        else {
+            Nekta_Logging "ERROR" "The file '$exeFullPath' don't exists." $LogFile
+        }
     }
     else {
-        Nekta_Logging INFO "Arquivo não encontrado. Baixando nova versão." $LogFile
-        Get-NotepadPlusPlus
+        Nekta_Logging "ERROR" "Unable to determine the drive letter of the ISO image." $LogFile
     }
+    
+    Nekta_Logging "INFO" "Unmounting $ISO." $LogFile
+    Dismount-DiskImage -ImagePath $ISO -ErrorAction Stop   
+    Nekta_Logging "SUCCESS" "Unmounting $ISO successfully." $LogFile
 }
 
-function Install-Nginx {
-    $nginxZipFile = Get-ChildItem -Path $AppsDir -Filter "nginx*.zip" -Recurse -ErrorAction SilentlyContinue
-    $ExtractDir = "$Laragon\nginx"
+#=========================================================================
 
-    if ($nginxZipFile -and $nginxZipFile.FullName -is [string]) {
-        Nekta_Logging INFO "Arquivo encontrado: $($nginxZipFile.Name). Descompactando para $ExtractDir" $LogFile
-        Nekta_Logging INFO $nginxZipFile.Name $LogFile
-        Nekta_UnzipArchive -F $nginxZipFile.FullName -D $ExtractDir -P
-    }
-    else {
-        Nekta_Logging INFO "Arquivo não encontrado. Baixando nova versão." $LogFile
-        Get-Nginx
-    }
-}
+###########################################################################
+#                                                                         #
+#          WINDOWS \ DOWNLOADERS                                          #
+#                                                                         #
+###########################################################################
 
-function Install-PHP {
-    $phpZipFile = Get-ChildItem -Path $AppsDir -Filter "php*.zip" -Recurse -ErrorAction SilentlyContinue
-    $ExtractDir = "$Laragon\php\php8"
+#==========================================================================
 
-    if ($phpZipFile -and $phpZipFile.FullName -is [string]) {
-        Nekta_Logging INFO "Arquivo encontrado: $($phpZipFile.Name). Descompactando para $ExtractDir" $LogFile
-        Nekta_Logging INFO $phpZipFile.Name $LogFile
-        Nekta_UnzipArchive -F $phpZipFile.FullName -D $ExtractDir -P        
-    }
-    else {
-        Nekta_Logging INFO "Arquivo não encontrado. Baixando nova versão." $LogFile
-        Get-PHP    
-    }
-}
+# FUNCTION Nekta_ResolveUrl
+#==========================================================================
+Function Nekta_ResolveUrl {
+    <#
+        .SYNOPSIS
+        Nekta_ResolveUrl resolves a URI and retrieves information such as file size, last modified date, and filename.
+        .DESCRIPTION
+        The Nekta_ResolveUrl function resolves the given URI and retrieves information such as file size, last modified date, and filename. It sends a GET request to the URL and retrieves the headers to extract the required information.
+        .PARAMETER Uri
+        The URI to resolve. This parameter is mandatory. URL is accepted as an alias.
+        .PARAMETER UserAgent
+        The user agent string to use for the request. By default, it uses two user agent strings: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36' and 'Googlebot/2.1 (+http://www.google.com/bot.html)'. You can specify multiple user agent strings as an array.
+        .PARAMETER Headers
+        Additional headers to include in the request. Default is @{'accept' = '*/*'}, which is needed to trick some servers into serving a download, such as from FileZilla.
+        .OUTPUTS
+        The function outputs a custom object with the following properties:
+            - Uri: The original URL.
+            - AbsoluteUri: The resolved URL after any redirections.
+            - FileName: The extracted filename from the URL or headers.
+            - FileSizeBytes: The file size in bytes.
+            - FileSizeReadable: The file size in a human-readable format.
+            - LastModified: The last modified date of the file.
+        .EXAMPLE
+        Nekta_ResolveUrl -Uri 'https://example.com/file.txt'
+        Resolves the URL 'https://example.com/file.txt' and retrieves the file information.
+        .EXAMPLE
+        Nekta_ResolveUrl -Uri 'https://example.com/file.txt' -UserAgent 'My User Agent'
+        Resolves the URL 'https://example.com/file.txt' using the specified user agent string.
+        .EXAMPLE
+        Nekta_ResolveUrl -Uri 'https://example.com/file.txt' -Headers @{ 'Authorization' = 'Bearer token' }
+        Resolves the URL 'https://example.com/file.txt' and includes the 'Authorization' header in the request.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("U")]
+        [ValidateNotNullOrEmpty()]
+        [string]$Uri,
 
-function Install-Python {
-    $python = Get-ChildItem -Path $AppsDir -Filter "python*.exe" -Recurse -ErrorAction SilentlyContinue
+        [Parameter(Position = 1, Mandatory = $false)]
+        [string[]]$UserAgent = @($null, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36', 'Googlebot/2.1 (+http://www.google.com/bot.html)'),
+        
+        [Parameter(Position = 2, Mandatory = $false)]
+        [hashtable]$Headers = @{accept = '*/*' }
+    )	
+	
+    begin {
+        #[string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        #Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
 
-    if ($python -and $python.FullName -is [string]) {
-        Nekta_Logging INFO "Arquivo encontrado: $($python.Name)." $LogFile
-        Nekta_Logging INFO $python.Name $LogFile
-        Nekta_SetupInstall -F $python.FullName -A "/quiet InstallAllUsers=0 Include_pip=1 Include_exe=1 Include_dev=0 PrependPath=1 Include_lib=1 Include_tcltk=1 Include_launcher=1 Include_doc=0 Include_test=0 Include_symbols=0 Include_debug=0 AssociateFiles=1"
-    }
-    else {
-        Nekta_Logging INFO "Arquivo não encontrado. Baixando nova versão." $LogFile
-        Get-Python    
-    }
-}
-function Install-WinFindr {    
-    Nekta_Logging INFO "Instalando WinFindr." $LogFile
-    if (Nekta_FindPath -P $winfindrPath) {        
-        Nekta_SetupInstall -F $winfindrPath 
-    }
-    elseif (-not(Nekta_FindPath -P "${env:ProgramFiles(x86)}\WinFindr\WinFindr.exe")) {
-        Nekta_NovaDownloader -U $winfindrUrl -D $winfindrPath
-    }
-    else {
-        Nekta_Logging ERROR" WinFindr já está instalado." $LogFile
-    }  
-}
+        # Required on Windows Powershell only
+        if ($PSEdition -eq 'Desktop') {
+            Add-Type -AssemblyName System.Net.Http
+            Add-Type -AssemblyName System.Web
+        }        
+       
+        # Enable TLS 1.2 in addition to whatever is pre-configured
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-function Set-LaragonConfiguration {    
-    Nekta_Logging INFO "Iniciando configuração do Laragon." $LogFile
-    Nekta_PurgeFiles -D "$Laragon\php"
-    Nekta_PurgeFiles -D "$Laragon\apache"
-    Nekta_PurgeFiles -D "$Laragon\git"
-    Nekta_PurgeFiles -D "$Laragon\heidisql"
-    Nekta_PurgeFiles -D "$Laragon\mysql"
-    Nekta_PurgeFiles -D "$Laragon\nodejs"
-    Nekta_PurgeFiles -D "$Laragon\notepad++"
-    Nekta_PurgeFiles -D "$Laragon\nginx"
-    Nekta_PurgeFiles -D "$Laragon\python"
-    Nekta_NewDirectory -D "$Laragon\php\php8"
-    Nekta_WipeDirectory -D "$Laragon\git"
-    Nekta_WipeDirectory -D "$Laragon\heidisql"
-    Nekta_WipeDirectory -D "$Laragon\mysql"
-    Nekta_WipeDirectory -D "$Laragon\nodejs"
-    Nekta_WipeDirectory -D "$Laragon\python" 
-    Install-Apache
-    Install-PHP
-    Install-NotepadPlusPlus   
-    Install-Nginx
-    Nekta_Logging INFO "Laragon configured." $LogFile
+        # Create one single client object for the pipeline
+        $HttpClient = New-Object System.Net.Http.HttpClient
+
+        if ($null -ne $Headers) {
+            foreach ($Header in $Headers.GetEnumerator()) {
+                $HttpClient.DefaultRequestHeaders.Add($Header.Key, $Header.Value)
+            }
+        }
+    }
+
+    process {
+        # Reset variables
+        $FileName = $FileSizeBytes = $FileSizeReadable = $LastModified = $null
+
+        Nekta_Logging "INFO" "Requesting headers from URL '$Uri'" $LogFile
+
+        foreach ($UserAgentString in $UserAgent) {
+            $HttpClient.DefaultRequestHeaders.Remove('User-Agent') | Out-Null
+            if ($UserAgentString) {
+                Nekta_Logging "INFO" "Using UserAgent '$UserAgentString'" $LogFile
+                $HttpClient.DefaultRequestHeaders.Add('User-Agent', $UserAgentString)
+            }
+
+            # This sends a GET request but only retrieves the headers
+            $ResponseHeader = $HttpClient.GetAsync($Uri, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).Result
+
+            # Exit the foreach if success
+            if ($ResponseHeader.IsSuccessStatusCode) {
+                break
+            }
+        }
+
+        if ($ResponseHeader.IsSuccessStatusCode) {
+            Nekta_Logging "INFO" "Successfully retrieved headers" $LogFile
+
+            if ($ResponseHeader.RequestMessage.RequestUri.AbsoluteUri -ne $Uri) {
+                Nekta_Logging "INFO" "URL '$Uri' redirects to '$($ResponseHeader.RequestMessage.RequestUri.AbsoluteUri)'" $LogFile
+            }
+
+            try {
+                $FileSizeBytes = $null
+                $FileSizeBytes = [int]$ResponseHeader.Content.Headers.GetValues('Content-Length')[0]
+                $FileSizeReadable = Format-Bytes($FileSizeBytes)
+                Nekta_Logging "INFO" "File size: $($FileSizeReadable)" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "Unable to determine file size" $LogFile
+            }
+
+            # Try to get the last modified date from the "Last-Modified" header, use error handling in case string is in invalid format
+            try {
+                $LastModified = $null
+                $LastModified = [DateTime]::ParseExact($ResponseHeader.Content.Headers.GetValues('Last-Modified')[0], 'r', [System.Globalization.CultureInfo]::InvariantCulture)
+                Nekta_Logging "INFO" "Last modified: $($LastModified.ToString())" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "Last-Modified header not found" $LogFile
+            }
+
+            if ($FileName) {
+                $FileName = $FileName.Trim()
+                Nekta_Logging "INFO" "Will use supplied filename '$FileName'"  $LogFile
+            }
+            else {
+                # Get the file name from the "Content-Disposition" header if available
+                try {
+                    $ContentDispositionHeader = $null
+                    $ContentDispositionHeader = $ResponseHeader.Content.Headers.GetValues('Content-Disposition')[0]
+                    Nekta_Logging "INFO" "Content-Disposition header found: $ContentDispositionHeader" $LogFile
+                }
+                catch {
+                    Nekta_Logging "INFO" "Content-Disposition header not found" $LogFile
+                }
+                if ($ContentDispositionHeader) {
+                    $ContentDispositionRegEx = @'
+^.*filename\*?\s*=\s*"?(?:UTF-8|iso-8859-1)?(?:'[^']*?')?([^";]+)
+'@
+                    if ($ContentDispositionHeader -match $ContentDispositionRegEx) {
+                        # GetFileName ensures we are not getting a full path with slashes. UrlDecode will convert characters like %20 back to spaces.
+                        $FileName = [System.IO.Path]::GetFileName([System.Web.HttpUtility]::UrlDecode($matches[1]))
+                        # If any further invalid filename characters are found, convert them to spaces.
+                        [IO.Path]::GetinvalidFileNameChars() | ForEach-Object { $FileName = $FileName.Replace($_, ' ') }
+                        $FileName = $FileName.Trim()
+                        Nekta_Logging "INFO" "Extracted filename '$FileName' from Content-Disposition header" $LogFile
+                    }
+                    else {
+                        Nekta_Logging "ERROR" "Failed to extract filename from Content-Disposition header" $LogFile
+                    }
+                }
+    
+                if ([string]::IsNullOrEmpty($FileName)) {
+                    # If failed to parse Content-Disposition header or if it's not available, extract the file name from the absolute URL to capture any redirections.
+                    # GetFileName ensures we are not getting a full path with slashes. UrlDecode will convert characters like %20 back to spaces. The URL is split with ? to ensure we can strip off any API parameters.
+                    $FileName = [System.IO.Path]::GetFileName([System.Web.HttpUtility]::UrlDecode($ResponseHeader.RequestMessage.RequestUri.AbsoluteUri.Split('?')[0]))
+                    [IO.Path]::GetinvalidFileNameChars() | ForEach-Object { $FileName = $FileName.Replace($_, ' ') }
+                    $FileName = $FileName.Trim()
+                    Nekta_Logging "INFO" "Extracted filename '$FileName' from absolute URL '$($ResponseHeader.RequestMessage.RequestUri.AbsoluteUri)'" $LogFile
+                }
+            }
+        }
+        else {
+            throw "Failed to retrieve headers from $($Uri): $([int]$ResponseHeader.StatusCode): $($ResponseHeader.ReasonPhrase)"
+        }
+
+        if ([string]::IsNullOrEmpty($FileName)) {
+            # If still no filename set, extract the file name from the original URL.
+            # GetFileName ensures we are not getting a full path with slashes. UrlDecode will convert characters like %20 back to spaces. The URL is split with ? to ensure we can strip off any API parameters.
+            $FileName = [System.IO.Path]::GetFileName([System.Web.HttpUtility]::UrlDecode($Uri.Split('?')[0]))
+            [System.IO.Path]::GetInvalidFileNameChars() | ForEach-Object { $FileName = $FileName.Replace($_, ' ') }
+            $FileName = $FileName.Trim()
+            Nekta_Logging "INFO" "Extracted filename '$FileName' from original URL '$Uri'" $LogFile
+        }
+
+        [PSCustomObject]@{
+            Uri              = $Uri
+            AbsoluteUri      = $ResponseHeader.RequestMessage.RequestUri.AbsoluteUri
+            FileName         = $FileName
+            FileSizeBytes    = $FileSizeBytes
+            FileSizeReadable = $FileSizeReadable
+            LastModified     = $LastModified
+        }    
+    }
+
+    end {
+        $HttpClient.Dispose()
+        #Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
 }
 
 #==========================================================================
 
-# Execução
+# FUNCTION Nekta_NovaDownloader
+#==========================================================================
+Function Nekta_NovaDownloader {
+    <#
+        .SYNOPSIS
+        Downloads a file from a specified URI.
+        .DESCRIPTION
+        The Nekta_NovaDownloader function downloads a file from a specified URI and saves it to the specified destination.
+        .PARAMETER Uri
+        The URI of the file to download. URL is accepted as an alias.
+        .PARAMETER Destination
+        The destination folder where the downloaded file will be saved. Default is the current working directory.
+        .PARAMETER FileName
+        The name of the downloaded file. If not provided, the function will attempt to extract the filename from the URI.
+        .PARAMETER UserAgent
+        The user agent string to use for the request. By default, it uses two user agent strings: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36' and 'Googlebot/2.1 (+http://www.google.com/bot.html)'. You can specify multiple user agent strings as an array.
+        .PARAMETER Headers
+        Additional headers to include in the request. Default is @{'accept' = '*/*'}, which is needed to trick some servers into serving a download, such as from FileZilla.
+        .PARAMETER TempPath
+        The temporary folder path to use for storing the downloaded file temporarily. Default is the user's temp folder.
+        .PARAMETER IgnoreDate
+        If specified, the function will not set the last modified date of the downloaded file.
+        .PARAMETER NoProgress
+        If specified, the function will not display a progress bar during the download.
+        .PARAMETER PassThru
+        If specified, the function will return the downloaded file object.
+        .EXAMPLE
+        Nekta_NovaDownloader -Uri 'https://example.com/file.txt' -Destination 'C:\Downloads'
+        This example downloads the file from the specified URI and saves it to the 'C:\Downloads' folder.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("U")]                
+        [ValidateNotNullOrEmpty()]
+        [string]$Uri,        
+        [Parameter(Position = 1)]
+        [ValidateNotNullOrEmpty()]
+        [Alias("D")]
+        [string]$Destination = $pwd.Path,        
+        [Parameter(Position = 2)]
+        [string[]]$UserAgent = @($null, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36', 'Googlebot/2.1 (+http://www.google.com/bot.html)'),             
+        [hashtable]$Headers = @{accept = '*/*' },        
+        [Alias("TEMP")]
+        [string]$TempPath = $env:TEMP,        
+        [Alias("ID")]
+        [switch]$IgnoreDate,               
+        [Alias("NP")]
+        [switch]$NoProgress,        
+        [Alias("TH")]
+        [switch]$PassThru
+    )
+
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+
+        if ($PSEdition -eq 'Desktop') {
+            Add-Type -AssemblyName System.Net.Http
+            Add-Type -AssemblyName System.Web
+        }
+
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $HttpClient = New-Object System.Net.Http.HttpClient
+        foreach ($Header in $Headers.GetEnumerator()) {
+            $HttpClient.DefaultRequestHeaders.Add($Header.Key, $Header.Value)
+        }
+    }
+
+    process {
+        $ResolveUriSplat = @{
+            Uri       = $Uri
+            UserAgent = $UserAgent
+            Headers   = $Headers
+        }
+        $Properties = Nekta_ResolveUrl @ResolveUriSplat -ErrorAction Stop
+
+        if ([string]::IsNullOrEmpty($FileName)) {
+            if ([string]::IsNullOrEmpty($Properties.FileName)) {
+                Nekta_Logging "ERROR" "No filename found for $Uri" $LogFile
+                return
+            }
+            else {
+                $FileName = $Properties.FileName
+            }
+        }
+
+        $DestinationFilePath = Join-Path $Destination $FileName       
+
+        foreach ($UserAgentString in $UserAgent) {
+            $HttpClient.DefaultRequestHeaders.Remove('User-Agent') | Out-Null
+            if ($UserAgentString) {
+                Nekta_Logging "INFO" "Using UserAgent '$UserAgentString'" $LogFile
+                $HttpClient.DefaultRequestHeaders.Add('User-Agent', $UserAgentString)
+            }
+
+            $ResponseStream = $HttpClient.GetStreamAsync($Uri)
+
+            if ($ResponseStream.Result.CanRead) {
+                break
+            }
+            else {
+                continue
+            }
+        }
+
+        if (!$ResponseStream.Result.CanRead) {
+            throw "$($ResponseStream.Exception.InnerException.Message)"
+        }        
+        
+        # Generate temp file name
+        $TempFileName = (New-Guid).ToString('N') + ".tmp"
+        $TempFilePath = Join-Path $TempPath $TempFileName
+        
+        # Check Destination exists and create it if not
+        if (-not (Nekta_FindPath -Path $Destination)) {
+            Nekta_Logging "INFO" "Output folder '$Destination' does not exist" $LogFile
+            try {
+                Nekta_NewDirectory -Directory $Destination
+                Nekta_Logging "INFO" "Created output folder '$Destination'" $LogFile
+            }
+            catch {
+                Nekta_Logging "ERROR" "Unable to create output folder '$Destination': $_" $LogFile
+                return
+            }
+        }
+        
+        # Open file stream
+        try {
+            $FileStream = [System.IO.File]::Create($TempFilePath)
+        }
+        catch {
+            Nekta_Logging "ERROR" "Unable to create file '$TempFilePath': $_" $LogFile
+            return
+        }
+                
+        if ($FileStream.CanWrite) {
+            Nekta_Logging "INFO" "Downloading to temp file '$TempFilePath'..." $LogFile        
+            $Buffer = New-Object byte[] 64KB
+            $BytesDownloaded = 0
+            $ProgressIntervalMs = 250
+            $ProgressTimer = (Get-Date).AddMilliseconds(-$ProgressIntervalMs)
+        
+            while ($true) {
+                try {
+                    # Read stream into buffer
+                    $ReadBytes = $ResponseStream.Result.Read($Buffer, 0, $Buffer.Length)                   
+        
+                    # Track bytes downloaded and display progress bar if enabled and file size is known
+                    $BytesDownloaded += $ReadBytes
+                    if (!$NoProgress -and (Get-Date) -gt $ProgressTimer.AddMilliseconds($ProgressIntervalMs)) {
+                        if ($Properties.FileSizeBytes) {
+                            $PercentComplete = [System.Math]::Floor($BytesDownloaded / $Properties.FileSizeBytes * 100)
+                            $TotalSize = Format-Bytes($Properties.FileSizeBytes)
+                            $ReceivedBytes = Format-Bytes($BytesDownloaded)                                                  
+                            Write-Progress -Activity "Downloading $FileName" -Status "$ReceivedBytes of $($TotalSize) ($PercentComplete%)" -PercentComplete $PercentComplete
+                        }
+                        else {
+                            Write-Progress -Activity "Downloading $FileName" -Status "$ReceivedBytes of ? bytes" -PercentComplete 0
+                        }
+                        $ProgressTimer = Get-Date
+                    }
+        
+                    # If end of stream
+                    if ($ReadBytes -eq 0) {
+                        Write-Progress -Activity "Downloading $FileName" -Completed
+                        $FileStream.Close()
+                        $FileStream.Dispose()
+                        try {
+                            Nekta_Logging "INFO" "Moving temp file to destination '$DestinationFilePath'" $LogFile
+                            $DownloadedFile = Move-Item -LiteralPath $TempFilePath -Destination $DestinationFilePath -Force -PassThru
+                        }
+                        catch {
+                            Nekta_Logging "ERROR" "Error moving file from '$TempFilePath' to '$DestinationFilePath': $_" $LogFile
+                            return
+                        }
+                       
+                        if ($Properties.LastModified -and -not $IgnoreDate) {
+                            Nekta_Logging "INFO" "Setting Last Modified date" $LogFile
+                            $DownloadedFile.LastWriteTime = $Properties.LastModified
+                        }
+                        Nekta_Logging "INFO" "Download complete!" $LogFile
+                        
+                        if ($PassThru) {
+                            $DownloadedFile
+                        }
+                        break
+                    }
+                    $FileStream.Write($Buffer, 0, $ReadBytes)
+                }
+                catch {
+                    Nekta_Logging "ERROR" "Error downloading file: $_" $LogFile
+                    Write-Progress -Activity "Downloading $FileName" -Completed
+                    $FileStream.Close()
+                    $FileStream.Dispose()
+                    break
+                }
+            }            
+        }
+    }
+
+    end {
+        $HttpClient.Dispose()       
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
 #==========================================================================
 
-Get-QuickLookPlugins
-Set-DarkMode
-Install-WingetPackages
-Install-Office365
-Install-Delphi12
-Install-ShanaEncoder
-Install-BitTorrent
-Install-MKVExtractor
-Install-Python
-Install-Postgres
-Disable-Services
-Set-ConfigSystem
-Set-PowerOptions
-Set-NetworkPrivate
-Set-Wallpaper
-Set-BitTorrentFolders
-Set-IDMFolders
-Set-WinRARFolders
-Set-TelegramFolders
-Set-KotatogramFolders
-Add-ExtrasPackages
-Set-LaragonConfiguration
-Remove-WindowsDefender
+# FUNCTION Format-Bytes
+#==========================================================================
+Function Format-Bytes {
+    param
+    (
+        [Parameter(
+            ValueFromPipeline = $true
+        )]
+        [ValidateNotNullOrEmpty()]
+        [long]$number
+    )
+    begin {        
+        # Unidades IEC com sufixos específicos
+        $sizes = 'B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'
+    }
+    
+    process {
+        # Loop para determinar a unidade apropriada
+        for ($x = 0; $x -lt $sizes.Count; $x++) {
+            # Verifica se o valor é menor que 1024^(x+1), indicando que a unidade atual é a mais apropriada
+            if ($number -lt [math]::Pow(1024, $x + 1)) {
+                # Formata o número com a unidade IEC apropriada
+                $num = $number / [math]::Pow(1024, $x)
+                $num = "{0:N2}" -f $num
+                return "$num $($sizes[$x])"
+            }
+        }
+    }
+    end {}
+}
+#==========================================================================
