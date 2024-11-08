@@ -15,6 +15,7 @@
 #       -Nekta_GetStream                            -> Get content from file 
 #       -Nekta_MoveArchive                          -> Move a file or multiple files
 #       -Nekta_GetFileName                          -> Get a name of any file
+#       -Nekta_ISOSetupInstall                      -> Execute an EXE file located on a ISO image, with or without arguments.
 #     -Installations and executables
 #       -Nekta_RunProcess                           -> Start a process
 #       -Nekta_RunProcessNoWait                     -> Start a process without wait 
@@ -38,6 +39,7 @@
 #       -Nekta_WipePrefetch                         -> Clear prefetch folder
 #       -Nekta_StartStopProcess                     -> Start and stop a process     
 #       -Nekta_FindPath                             -> Checks if path exists
+#       -Nekta_ResolvePath                          -> Resolves a given path (Path or LiteralPath) and checks if it exists.
 #     -Downloads
 #       -Nekta_ResolveUri                           -> Resolves a URI and retrieves information such as file size, last modified date, and filename.
 #       -Nekta_NovaDownloader                       -> Downloading a file with progress bar and some features
@@ -1737,6 +1739,11 @@ Function Nekta_FindPath {
     }
 }
 
+#==========================================================================
+
+# FUNCTION Nekta_ResolvePath
+#==========================================================================
+
 Function Nekta_ResolvePath {
     <#
         .SYNOPSIS
@@ -2015,9 +2022,24 @@ Function Nekta_SetupInstall {
 
 #==========================================================================
 
-# FUNCTION Nekta_ResolveUrl
+# FUNCTION Nekta_ISOSetupInstall
 #==========================================================================
 Function Nekta_ISOSetupInstall {
+    <#
+        .SYNOPSIS
+        Execute an EXE file located on a ISO image, with or without arguments.
+        .DESCRIPTION
+        Executes an EXE file located on a ISO image, with or without provided arguments.
+        .PARAMETER ISO
+        The full path to the ISO imae (e.g. C:\Temp\MyApp.iso)
+        .PARAMETER EXEName
+        The full name to the executable file (e.g., MyApp.exe).
+        .PARAMETER ExeArgs
+        Optional arguments to pass to the executable.
+        .EXAMPLE
+        Nekta_ISOSetupInstall -ISO "C:\Temp\MyApp.iso" -ExeName "MyApp.exe" -ExeArgs "/silent /install"
+        Executes 'MyApp.exe' located on a iso image, with the specified arguments 
+    #>
     param (
         [parameter(Mandatory = $True)]
         [Alias("I")]
@@ -2041,10 +2063,10 @@ Function Nekta_ISOSetupInstall {
        
         if (Nekta_FindPath -P $exeFullPath) {
             if ([string]::IsNullOrEmpty($ExeArgs)) {
-                Nekta_RunProcess -F $exeFullPath                
+                Start-Process -FilePath $exeFullPath -Wait -NoNewWindow -PassThru                
             }
             else {
-                Nekta_RunProcess -F $exeFullPath -A $ExeArgs                
+                Start-Process -FilePath $exeFullPath -ArgumentList $ExeArgs -Wait -NoNewWindow -PassThru
             }
         }
         else {
@@ -2060,7 +2082,7 @@ Function Nekta_ISOSetupInstall {
     Nekta_Logging "SUCCESS" "Unmounting $ISO successfully." $LogFile
 }
 
-#==========================================================================
+#=========================================================================
 
 ###########################################################################
 #                                                                         #
