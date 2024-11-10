@@ -38,7 +38,6 @@
 #     -System
 #       -Nekta_WipePrefetch                         -> Clear prefetch folder
 #       -Nekta_StartStopProcess                     -> Start and stop a process     
-#       -Nekta_FindPath                             -> Checks if path exists
 #       -Nekta_ResolvePath                          -> Resolves a given path (Path or LiteralPath) and checks if it exists.
 #     -Downloads
 #       -Nekta_ResolveUri                           -> Resolves a URI and retrieves information such as file size, last modified date, and filename.
@@ -798,11 +797,11 @@ Function Nekta_RunProcess {
     process {
         if ([string]::IsNullOrEmpty($Arguments)) {
             Nekta_Logging "INFO" "Execute process '$Filename' with no arguments" $LogFile
-            $Process = Start-Process $FileName -Wait -NoNewWindow -PassThru
+            $Process = Start-Process -FilePath $FileName -Wait -NoNewWindow -PassThru
         }
         else {
             Nekta_Logging "INFO" "Execute process '$Filename' with arguments '$Arguments'" $LogFile
-            $Process = Start-Process $FileName -ArgumentList $Arguments -Wait -NoNewWindow -PassThru
+            $Process = Start-Process -FilePath $FileName -ArgumentList $Arguments -Wait -NoNewWindow -PassThru
         }
 
         $Process.HasExited
@@ -854,11 +853,11 @@ Function Nekta_RunProcessNoWait {
     process {
         if ([string]::IsNullOrEmpty($Arguments)) {
             Nekta_Logging "INFO" "Execute process '$Filename' with no arguments without wait." $LogFile
-            $Process = Start-Process $FileName -NoNewWindow -PassThru
+            $Process = Start-Process -FilePath $FileName -NoNewWindow -PassThru
         }
         else {
             Nekta_Logging "INFO" "Execute process '$Filename' with arguments '$Arguments' without wait." $LogFile
-            $Process = Start-Process $FileName -ArgumentList $Arguments -NoNewWindow -PassThru
+            $Process = Start-Process -FilePath $FileName -ArgumentList $Arguments -NoNewWindow -PassThru
         }
 
         $Process.HasExited
@@ -1696,50 +1695,6 @@ Function Nekta_StartStopProcess {
 }
 
 #==========================================================================
-#
-# FUNCTION Nekta_FindPath
-#==========================================================================
-Function Nekta_FindPath {
-    <#
-        .SYNOPSIS
-        Checks if a specified path exists.
-        .DESCRIPTION
-        This function checks whether a given file or directory path exists using Test-Path.
-        .PARAMETER Path
-        The path to be checked.
-        .EXAMPLE
-        Nekta_FindPath -Path "C:\Temp\MyFile.txt"
-        Returns: True if the path exists, False otherwise.
-    #>
-    [CmdletBinding()]
-    Param(
-        [Alias("P")]
-        [Parameter(Mandatory = $true, Position = 0)][String]$Path
-    )
-
-    begin {
-        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
-        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
-    }
-
-    process {
-        Nekta_Logging "INFO" "Checking if the path '$Path' exists" $LogFile
-        $PathExists = Test-Path -Path $Path
-
-        if ($PathExists) {
-            Nekta_Logging "SUCCESS" "The path '$Path' exists." $LogFile
-        }
-        else {
-            Nekta_Logging "WARNING" "The path '$Path' does not exist." $LogFile
-        }     
-    }
-
-    end {
-        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
-    }
-}
-
-#==========================================================================
 
 # FUNCTION Nekta_ResolvePath
 #==========================================================================
@@ -2061,7 +2016,7 @@ Function Nekta_ISOSetupInstall {
     if ($driveLetter) {
         $exeFullPath = "$($driveLetter):\$ExeName"      
        
-        if (Nekta_FindPath -P $exeFullPath) {
+        if (Test-Path -Path $exeFullPath) {
             if ([string]::IsNullOrEmpty($ExeArgs)) {
                 Start-Process -FilePath $exeFullPath -Wait -NoNewWindow -PassThru                
             }
@@ -2397,7 +2352,7 @@ Function Nekta_NovaDownloader {
         $TempFilePath = Join-Path $TempPath $TempFileName
         
         # Check Destination exists and create it if not
-        if (-not (Nekta_FindPath -Path $Destination)) {
+        if (-not (Test-Path -Path $Destination)) {
             Nekta_Logging "INFO" "Output folder '$Destination' does not exist" $LogFile
             try {
                 Nekta_NewDirectory -Directory $Destination
