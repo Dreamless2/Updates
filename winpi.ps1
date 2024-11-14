@@ -24,7 +24,7 @@ if (-not(Test-Path -Path $AppsDir)) {
     New-item -ItemType Directory $AppsDir
 }
 
-Start-BitsTransfer -Source "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -Destination $AppsDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/blob/main/Nekta.psm1" -Destination $AppsDir
 
 if (Test-Path -Path "$AppsDir\Nekta.psm1") {
     Import-Module Nekta.psm1
