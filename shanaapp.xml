@@ -31,7 +31,6 @@
     <DecH264>SW(FFmpeg)</DecH264>
     <DecHEVC>HW(AUTO)</DecHEVC>
     <DecAV1>HW(AUTO)</DecAV1>
-    <DecSWDChk>True</DecSWDChk>
   </Decoder>
   <MultiThread>
     <DecMTVal> -threads 0 -thread_type frame</DecMTVal>
@@ -39,7 +38,7 @@
     <FileAddMTVal>0</FileAddMTVal>
     <MultiEncMTVal>0</MultiEncMTVal>
   </MultiThread>
-  <PresetLabel>MP4 SD Leg.xml</PresetLabel>
+  <PresetLabel>MP4\MP4 HD Dub.xml</PresetLabel>
   <IsUserPreset>False</IsUserPreset>
   <logsaveToolStripMenuItem>False</logsaveToolStripMenuItem>
   <FileExist>
@@ -76,6 +75,12 @@
     <encodingFrmWidthVal>700</encodingFrmWidthVal>
     <encodingFrmHeightVal>620</encodingFrmHeightVal>
   </EncodingFrm>
+  <WebView2>
+    <WVFrmWidthVal>820</WVFrmWidthVal>
+    <WVFrmHeightVal>520</WVFrmHeightVal>
+    <WVFrmX>870</WVFrmX>
+    <WVFrmY>436</WVFrmY>
+  </WebView2>
   <ofoldercheckBox>False</ofoldercheckBox>
   <Popup>
     <sWRPopupToolStripMenuItem>True</sWRPopupToolStripMenuItem>
@@ -92,4 +97,12 @@
   <RenderSubtitleAttachedFontsToolStripMenuItem>True</RenderSubtitleAttachedFontsToolStripMenuItem>
   <UseKeyFrameNavigationToolStripMenuItem>False</UseKeyFrameNavigationToolStripMenuItem>
   <setDarkMode>False</setDarkMode>
+  <DR_SDLRendererToolStripMenuItem>True</DR_SDLRendererToolStripMenuItem>
+  <DR_VulkanRendererToolStripMenuItem>False</DR_VulkanRendererToolStripMenuItem>
+  <HDRYCgCo_SDLRendererToolStripMenuItem>True</HDRYCgCo_SDLRendererToolStripMenuItem>
+  <HDRYCgCo_VulkanRendererToolStripMenuItem>False</HDRYCgCo_VulkanRendererToolStripMenuItem>
+  <PreviewSDLRendererOnlyToolStripMenuItem>False</PreviewSDLRendererOnlyToolStripMenuItem>
+  <CacheToolStripMenuItem>True</CacheToolStripMenuItem>
+  <CookiesToolStripMenuItem>False</CookiesToolStripMenuItem>
+  <ClearBrowsingDataWhenCloseToolStripMenuItem>True</ClearBrowsingDataWhenCloseToolStripMenuItem>
 </AppSettings>
