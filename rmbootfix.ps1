@@ -14,6 +14,8 @@ if (!(Test-Path -Path $rmbootPath)) {
     Nekta_NewDirectory -D $rmbootPath
 }
 
+Nekta_WipeDirectory -D $SourceISOTemp
+
 $oscdUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/oscdimg-amd64.zip"
 $oscdPath = [System.IO.Path]::GetFileName($oscdUrl)
 $oscdFullPath = Join-Path -Path $rmbootPath $oscdPath
