@@ -34,6 +34,12 @@ if (!(Test-Path -Path $UnattendedISOPath)) {
         Nekta_NewDirectory -D $UnattendedISODirectory
     }
 }
+else {
+    $UnattendedISODirectory = [System.IO.Path]::GetDirectoryName($UnattendedISOPath)
+    if (!(Test-Path -Path $UnattendedISODirectory)) {
+        Nekta_NewDirectory -D $UnattendedISODirectory
+    }
+}
 
 try {
     Mount-DiskImage -ImagePath $SourceISOFullPath
