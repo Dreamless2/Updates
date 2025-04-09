@@ -75,4 +75,5 @@ else {
 Nekta_WipeDirectory -D $SourceISOTemp
 
 Dismount-DiskImage -ImagePath $SourceISOFullPath
+Nekta_Logging 
 Write-Host -ForegroundColor Green "The source ISO file has been unmounted."
