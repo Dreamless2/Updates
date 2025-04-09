@@ -1,7 +1,8 @@
 $rmbootPath = "$env:USERPROFILE\Downloads\rmbootfix"
 $logs = "$rmbootPath\rmbootfix.log"
 $SourceISOTemp = "$rmbootPath\SourceISOTemp"
-$bootPath = "$bootPath"
+$bootPath = "$sou
+"
 
 $NektaModule = "$env:TEMP\Nekta.psm1"
 
