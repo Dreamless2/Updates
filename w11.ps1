@@ -6,23 +6,18 @@ $settings = "$AppsDir\Settings.reg"
 $idm = "$AppsDir\IDM.reg"
 $revoLic = "$AppsDir\revouninstallerpro5.lic"
 
-# Caminho temporário para o módulo Nekta.psm1
 $NektaModule = "$env:TEMP\Nekta.psm1"
 
-# Cria a pasta Apps se não existir
 if (-not (Test-Path -Path $AppsDir)) {
     New-Item -ItemType Directory -Path $AppsDir | Out-Null
 }
 
-# Baixa o módulo se ainda não existir localmente
 if (-not (Test-Path -Path $NektaModule)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
 }
 
-# Importa o módulo baixado
 Import-Module $NektaModule -Force
 
-# Baixa os arquivos necessários se ainda não existirem
 if (-not (Test-Path -Path $settings)) {
     Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
 }
