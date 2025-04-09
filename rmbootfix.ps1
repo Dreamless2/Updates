@@ -28,8 +28,7 @@ $UnattendedISOPath = $(Write-Host -NoNewLine) + $(Write-Host "Enter the path to 
 $SourceISOFullPath = ($SourceISOPath).trim('"')
 
 if (!(Test-Path -Path $UnattendedISOPath)) {
-        Nekta_NewDirectory -D $UnattendedISODirectory
-
+    Nekta_NewDirectory -D $UnattendedISODirectory
 }
 
 try {
