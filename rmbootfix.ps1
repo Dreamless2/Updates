@@ -5,8 +5,7 @@ $bootPath = "$bootPath"
 
 $NektaModule = "$env:TEMP\Nekta.psm1"
 
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
-}
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
 
 Import-Module $NektaModule -Force
 
@@ -27,6 +26,12 @@ Nekta_UnzipArchive -F $oscdFullPath -D $rmbootPath -P
 $SourceISOPath = $(Write-Host -NoNewLine) + $(Write-Host "`nEnter the path to the source ISO file:" -ForegroundColor Green -NoNewLine; Read-Host)
 $UnattendedISOPath = $(Write-Host -NoNewLine) + $(Write-Host "Enter the path to the destination ISO file:" -ForegroundColor Green -NoNewLine; Read-Host)
 $SourceISOFullPath = ($SourceISOPath).trim('"')
+
+
+if (!(Test-Path -Path $SourceISOFullPath)) {
+    Nekta_Logging "E" "The source ISO file does not exist. Aborting..." -LogFile $logs
+    exit
+}
 
 try {
     Mount-DiskImage -ImagePath $SourceISOFullPath
