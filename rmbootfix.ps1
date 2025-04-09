@@ -14,11 +14,12 @@ if (!(Test-Path -Path $rmbootPath)) {
     Nekta_NewDirectory -D $rmbootPath
 }
 
-if (Test-Path -Path $rmbootPath) {
-    <# Action to perform if the condition is true #>
-
+if (Test-Path -Path $rmbootPath) {    
     Nekta_WipeDirectory -D $rmbootPath
+}else{
+    Nekta_NewDirectory -D $rmbootPath
 }
+
 
 $oscdUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/oscdimg-amd64.zip"
 $oscdPath = [System.IO.Path]::GetFileName($oscdUrl)
