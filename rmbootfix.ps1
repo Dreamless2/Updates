@@ -22,7 +22,7 @@ $oscdFullPath = Join-Path -Path $rmbootPath $oscdPath
 Nekta_Logging "I" "Download the OSCDIMG zip file." -LogFile $logs
 Nekta_NovaDownloader -U "https://github.com/Dreamless2/Updates/releases/download/youpdates/oscdimg-amd64.zip" -D $rmbootPath
 
-Nekta_Logging "I" "Extracting the OSCDIMG zip file." -LogFile $logs
+Nekta_Logging "I" "Extracting the OSCDIMG." -LogFile $logs
 Nekta_UnzipArchive -F $oscdFullPath -D $rmbootPath -P
 
 $SourceISOPath = $(Write-Host -NoNewLine) + $(Write-Host "`nEnter the path to the source ISO file:" -ForegroundColor Green -NoNewLine; Read-Host)
