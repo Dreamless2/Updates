@@ -5,7 +5,6 @@ $bootPath = "$bootPath"
 
 $NektaModule = "$env:TEMP\Nekta.psm1"
 
-if (-not (Test-Path -Path $NektaModule)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
 }
 
