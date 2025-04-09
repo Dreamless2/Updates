@@ -10,13 +10,10 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/ref
 
 Import-Module $NektaModule -Force
 
-if (!(Test-Path -Path $rmbootPath)) {
-    Nekta_NewDirectory -D $rmbootPath
-}
-
 if (Test-Path -Path $rmbootPath) {    
     Nekta_WipeDirectory -D $rmbootPath
-}else{
+}
+else {
     Nekta_NewDirectory -D $rmbootPath
 }
 
