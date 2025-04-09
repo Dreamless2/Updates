@@ -27,10 +27,12 @@ $SourceISOPath = $(Write-Host -NoNewLine) + $(Write-Host "`nEnter the path to th
 $UnattendedISOPath = $(Write-Host -NoNewLine) + $(Write-Host "Enter the path to the destination ISO file:" -ForegroundColor Green -NoNewLine; Read-Host)
 $SourceISOFullPath = ($SourceISOPath).trim('"')
 
-
-if (!(Test-Path -Path $SourceISOFullPath)) {
-    Nekta_Logging "E" "The source ISO file does not exist. Aborting..." -LogFile $logs
-    exit
+# if not existe UnattendedISOPath, create it
+if (!(Test-Path -Path $UnattendedISOPath)) {
+    $UnattendedISODirectory = [System.IO.Path]::GetDirectoryName($UnattendedISOPath)
+    if (!(Test-Path -Path $UnattendedISODirectory)) {
+        Nekta_NewDirectory -D $UnattendedISODirectory
+    }
 }
 
 try {
