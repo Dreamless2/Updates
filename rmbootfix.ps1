@@ -63,7 +63,7 @@ if (Test-Path -Path "$bootPath\bootfix.bin") {
 
 $oscdimg = "$oscdimgPath\oscdimg.exe"
 $etfsboot = "$oscdimgPath\etfsboot.com"
-$efisys_noprompt = "$oscdimgath\efisys_noprompt.bin"
+$efisys_noprompt = "$oscdimgPath\efisys_noprompt.bin"
 $parameters = "-bootdata:2#p0,e,b""$etfsboot""#pEF,e,b""$efisys_noprompt"" -u1 -udfver102 ""$SourceISOTemp"" ""$UnattendedISOPath"""
 
 $ProcessingResult = Nekta_RunProcess -P $oscdimg -A $parameters
