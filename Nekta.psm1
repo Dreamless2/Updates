@@ -16,6 +16,7 @@
 #       -Nekta_MoveArchive                          -> Move a file or multiple files
 #       -Nekta_GetFileName                          -> Get a name of any file
 #       -Nekta_ISOSetupInstall                      -> Execute an EXE file located on a ISO image, with or without arguments.
+#       -Nekta_CopyWithProgress                     -> Copy files and folders showing a progress
 #     -Installations and executables
 #       -Nekta_RunProcess                           -> Start a process
 #       -Nekta_RunProcessNoWait                     -> Start a process without wait 
@@ -2498,3 +2499,71 @@ Function Format-Bytes {
     end {}
 }
 #==========================================================================
+
+#==========================================================================
+
+# FUNCTION Nekta_CopyWithProgress
+#==========================================================================
+Function Nekta_CopyWithProgress {
+    <#
+        .SYNOPSIS
+        Copies files/folders recursively with progress bar and estimated time.
+        .DESCRIPTION
+        Uses Nekta_NewDirectory and Nekta_CopyArchive internally. Displays progress, elapsed and remaining time.
+        .PARAMETER SourcePath
+        Root source folder to start copying from.
+        .PARAMETER DestinationPath
+        Target base folder where files and folders will be recreated/copied.
+    #>
+    [CmdletBinding()]
+    param(
+        [Alias("S")]
+        [Parameter(Mandatory = $true)][string]$SourcePath,
+        [Alias("D")]
+        [Parameter(Mandatory = $true)][string]$DestinationPath
+    )
+
+    begin {
+        $FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+        Nekta_Logging "INFO" "Source: $SourcePath | Destination: $DestinationPath" $LogFile
+
+        $sourceItems = Get-ChildItem -Path $SourcePath -Recurse
+        $total = $sourceItems.Count
+        $count = 0
+        $startTime = Get-Date
+    }
+
+    process {
+        foreach ($item in $sourceItems) {
+            $relativePath = $item.FullName.Substring($SourcePath.Length).TrimStart('\')
+            $destination = Join-Path $DestinationPath $relativePath
+
+            if ($item.PSIsContainer) {
+                Nekta_Logging "INFO" "Creating directory: $destination" $LogFile
+                Nekta_NewDirectory -D $destination
+            }
+            else {
+                Nekta_Logging "INFO" "Copying file: $($item.FullName) -> $destination" $LogFile
+                Nekta_CopyArchive -F $item.FullName -D $destination
+            }
+
+            $count++
+            $elapsed = (Get-Date) - $startTime
+            $estimatedTotalTime = New-TimeSpan -Seconds ($elapsed.TotalSeconds / $count * $total)
+            $remainingTime = $estimatedTotalTime - $elapsed
+
+            $statusMessage = "$count of $total | Elapsed: $($elapsed.ToString('hh\:mm\:ss')) | Remaining: $($remainingTime.ToString('hh\:mm\:ss'))"
+
+            Write-Progress `
+                -Activity "Copying: $($item.Name)" `
+                -Status $statusMessage `
+                -PercentComplete (($count / $total) * 100)
+        }
+    }
+
+    end {
+        Nekta_Logging "SUCCESS" "Finished copying $total item(s)." $LogFile
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
