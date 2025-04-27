@@ -217,6 +217,7 @@ function Remove-WindowsDefender {
 #==========================================================================
 
 function Add-ExtrasPackages {  
+    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
     if (Test-Path -Path "$env:ProgramFiles\VS Revo Group\Revo Uninstaller Pro\RevoUninPro.exe") {
         Nekta_Logging INFO "Activating Revo Uninstaller Pro" $LogFile        
         Nekta_CopyArchive -F "$AppsDir\revouninstallerpro5.lic" -D "$env:ProgramData\VS Revo Group\Revo Uninstaller Pro"        
@@ -225,7 +226,7 @@ function Add-ExtrasPackages {
 
     if (Test-Path -Path "${env:ProgramFiles(x86)}\Internet Download Manager\IDMan.exe") {
         Nekta_Logging INFO "Ativando IDM." $LogFile
-        Nekta_StopService -S "idm*" 
+        Stop-Process -Name "idm*" -Force
         Nekta_ImportRegFile -F $idm
         Nekta_Logging SUCCESS "IDM activated successfully." $LogFile        
     }
