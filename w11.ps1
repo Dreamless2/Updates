@@ -31,21 +31,18 @@ $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/
 $codec32Url = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x86.7z"
 $codec64Url = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
 $rarregUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
-$settingsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg"
 
 $shana = [System.IO.Path]::GetFileName($shanaUrl)        
 $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
 $qBitTorrentName = [System.IO.Path]::GetFileName($qBitTorrentUrl)
 $defenderName = [System.IO.Path]::GetFileName($defenderUrl)
 $rarregName = [System.IO.Path]::GetFileName($rarregUrl)
-$settingsName = [System.IO.Path]::GetFileName($settingsUrl)
 
 $defenderPath = Join-Path $AppsDir $defenderName
 $shanaPath = Join-Path $AppsDir $shana      
 $inviskaPath = Join-Path $AppsDir $inviska
 $qBitTorrentPath = Join-Path $AppsDir $qBitTorrentName
 $rarregPath = Join-Path $AppsDir $rarregName
-$settingsPath = Join-Path $AppsDir $settingsName
 
 #==========================================================================
 
@@ -241,7 +238,7 @@ function Add-ExtrasPackages {
     }
     else {
         Nekta_Logging INFO "Starting configuration" $LogFile
-        Nekta_ImportRegFile -F $settingsPath
+        Nekta_ImportRegFile -F $settings
         Nekta_Logging SUCCESS "Winrar successfully configured." $LogFile           
     }       
 
