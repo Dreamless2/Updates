@@ -8,27 +8,16 @@ $revoLic = "$AppsDir\revouninstallerpro5.lic"
 
 $NektaModule = "$env:TEMP\Nekta.psm1"
 
-if (-not (Test-Path -Path $AppsDir)) {
-    New-Item -ItemType Directory -Path $AppsDir | Out-Null
-}
+New-Item -ItemType Directory -Path $AppsDir | Out-Null
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $AppsDir
+Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $AppsDir
 
 if (-not (Test-Path -Path $NektaModule)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
 }
 
 Import-Module $NektaModule -Force
-
-if (-not (Test-Path -Path $settings)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
-}
-
-if (-not (Test-Path -Path $idm)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $AppsDir
-}
-
-if (-not (Test-Path -Path $revoLic)) {
-    Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $AppsDir
-}
 
 #==========================================================================
 
@@ -37,23 +26,26 @@ if (-not (Test-Path -Path $revoLic)) {
 
 $shanaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/ShanaEncoder7.4.exe"
 $inviskaUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Inviska_MKV_Extract_11.0_x86-64_Setup.exe"
-$qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-5.0.4/qbittorrent_5.0.4_qt6_lt20_x64_setup.exe"
+$qBitTorrentUrl = "https://sinalbr.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-5.1.0/qbittorrent_5.1.0_qt6_lt20_x64_setup.exe"
 $defenderUrl = "https://github.com/ionuttbara/windows-defender-remover/releases/download/release_def_12_8/DefenderRemover.exe"    
 $codec32Url = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x86.7z"
 $codec64Url = "https://github.com/Dreamless2/Updates/releases/download/youpdates/CodecLibrary.v1.2.x64.7z"
 $rarregUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/rarreg.key"    
+$settingsUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg"
 
 $shana = [System.IO.Path]::GetFileName($shanaUrl)        
 $inviska = [System.IO.Path]::GetFileName($inviskaUrl)
 $qBitTorrentName = [System.IO.Path]::GetFileName($qBitTorrentUrl)
 $defenderName = [System.IO.Path]::GetFileName($defenderUrl)
 $rarregName = [System.IO.Path]::GetFileName($rarregUrl)
+$settingsName = [System.IO.Path]::GetFileName($settingsUrl)
 
 $defenderPath = Join-Path $AppsDir $defenderName
 $shanaPath = Join-Path $AppsDir $shana      
 $inviskaPath = Join-Path $AppsDir $inviska
 $qBitTorrentPath = Join-Path $AppsDir $qBitTorrentName
 $rarregPath = Join-Path $AppsDir $rarregName
+$settingsPath = Join-Path $AppsDir $settingsName
 
 #==========================================================================
 
@@ -244,13 +236,12 @@ function Add-ExtrasPackages {
     if (-not(Test-Path -Path "$env:ProgramFiles\WinRAR\rarreg.key")) {
         Nekta_Logging INFO "Activating WinRAR" $LogFile
         Nekta_NovaDownloader -U $rarregUrl -D $AppsDir
-        Nekta_CopyArchive -F $rarregPath -D "$env:ProgramFiles\WinRAR"
-        Nekta_ImportRegFile -F $settings
+        Nekta_CopyArchive -F $rarregPath -D "$env:ProgramFiles\WinRAR"       
         Nekta_Logging SUCCESS "WinRAR activated successfully." $LogFile          
     }
     else {
         Nekta_Logging INFO "Starting configuration" $LogFile
-        Nekta_ImportRegFile -F $settings
+        Nekta_ImportRegFile -F $settingsPath
         Nekta_Logging SUCCESS "Winrar successfully configured." $LogFile           
     }       
 
@@ -265,11 +256,12 @@ function Get-QuickLookPlugins {
     Nekta_Logging INFO "Downloading QuickLook plugins" $LogFile
     Nekta_NovaDownloader -U "https://github.com/canheo136/QuickLook.Plugin.ApkViewer/releases/download/1.3.5/QuickLook.Plugin.ApkViewer.qlplugin" -D $AppsDir
     Nekta_NovaDownloader -U "https://github.com/adyanth/QuickLook.Plugin.FolderViewer/releases/download/1.3/QuickLook.Plugin.FolderViewer.qlplugin" -D $AppsDir
-    Nekta_NovaDownloader -U "https://github.com/emako/QuickLook.Plugin.TorrentViewer/releases/download/v1.0.3/QuickLook.Plugin.TorrentViewer.qlplugin" -D $AppsDir    
+    Nekta_NovaDownloader -U "https://github.com/emako/QuickLook.Plugin.TorrentViewer/releases/download/v1.0.3/QuickLook.Plugin.TorrentViewer.qlplugin" -D $AppsDir  
+    Nekta_NovaDownloader -U "https://github.com/mooflu/QuickLook.Plugin.WebViewPlus/releases/download/1.6.1/QuickLook.Plugin.WebViewPlus.qlplugin" -D $AppsDir 
     Nekta_Logging SUCCESS "Done." $LogFile
 }
 function Install-Office365 {
-    $officeToolUrl = "https://github.com/YerongAI/Office-Tool/releases/download/v10.21.25.0/Office_Tool_with_runtime_v10.21.25.0_x64.zip"
+    $officeToolUrl = "https://github.com/YerongAI/Office-Tool/releases/download/v10.21.35.0/Office_Tool_with_runtime_v10.21.35.0_x64.zip"
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
     $officeToolPath = Join-Path $AppsDir $officeToolName    
