@@ -9,7 +9,7 @@ if (-not(Test-Path -Path $spotdlPath)) {
     Start-BitsTransfer -Source "https://github.com/Nexxis20/Updates/releases/download/crd/ffmpeg.exe"
 }
 
-Import-Module .\Nekta.psm1
+$NektaModule = "$env:TEMP\Nekta.psm1"
 
 function Nekta_Spotify {
     [CmdletBinding()]
