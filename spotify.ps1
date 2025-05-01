@@ -4,12 +4,16 @@ $spotdlUrl = "https://github.com/spotDL/spotify-downloader/releases/download/v4.
 $spotdlName = [System.IO.Path]::GetFileName($spotdlUrl)
 $spotdlPath = Join-Path -Path $AppDir $spotdlName
 
-if (-not(Test-Path -Path $spotdlPath)) {
-    Start-BitsTransfer -Source $spotdlUrl -Destination $AppDir
-    Start-BitsTransfer -Source "https://github.com/Nexxis20/Updates/releases/download/crd/ffmpeg.exe"
+$NektaModule = "$env:TEMP\Nekta.psm1"
+
+Start-BitsTransfer -Source "https://github.com/Nexxis20/Updates/releases/download/crd/ffmpeg.exe"
+Start-BitsTransfer -Source "https://github.com/spotDL/spotify-downloader/releases/download/v4.2.10/spotdl-4.2.10-win32.exe" 
+
+if (-not (Test-Path -Path $NektaModule)) {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
 }
 
-$NektaModule = "$env:TEMP\Nekta.psm1"
+Import-Module $NektaModule -Force
 
 function Nekta_Spotify {
     [CmdletBinding()]
