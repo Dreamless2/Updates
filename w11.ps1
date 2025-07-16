@@ -49,49 +49,28 @@ $rarregPath = Join-Path $AppsDir $rarregName
 # Pacotes winget
 #==========================================================================
 
-$PKGS = @(
-    "Microsoft.VCRedist.2005.x86",
-    "Microsoft.VCRedist.2005.x64",
-    "Microsoft.VCRedist.2008.x86",
-    "Microsoft.VCRedist.2008.x64",
-    "Microsoft.VCRedist.2010.x86",
-    "Microsoft.VCRedist.2010.x64",
-    "Microsoft.VCRedist.2012.x86",
-    "Microsoft.VCRedist.2012.x64",
-    "Microsoft.VCRedist.2013.x86",
-    "Microsoft.VCRedist.2013.x64",
-    "Microsoft.VCRedist.2015+.x86",
-    "Microsoft.VCRedist.2015+.x64",
+$PKGS = @(   
     "GeorgieLabs.SoundWireServer",
-    "CrystalRich.LockHunter",
-    "Google.Chrome",
+    "CrystalRich.LockHunter",   
     "Maxthon.Maxthon",
-    "Opera.Opera",
     "Flameshot.Flameshot",
     "VideoLAN.VLC",  
     "Telegram.TelegramDesktop",
     "Kotatogram.Kotatogram",
-    "RevoUninstaller.RevoUninstallerPro",
     "Tonec.InternetDownloadManager",
     "Microsoft.VisualStudioCode",
     "Bitwarden.Bitwarden",
     "voidtools.Everything",
     "Microsoft.PowerShell",
     "Microsoft.PowerToys", 
-    "RARLab.WinRAR",
     "gerardog.gsudo",  
-    "7zip.7zip",    
     "Git.Git",
-    "FxSound.FxSound",
     "RamenSoftware.Windhawk",
     "MoritzBunkus.MKVToolNix",    
     "UnifiedIntents.UnifiedRemote",
     "QL-Win.QuickLook",
     "MediaArea.MediaInfo.GUI",
-    "OpenJS.NodeJS.LTS",
-    "Microsoft.DotNet.SDK.8",    
-    "Microsoft.DotNet.SDK.9",        
-    "Glarysoft.GlaryUtilities",
+    "OpenJS.NodeJS.LTS",      
     "EclipseAdoptium.Temurin.21.JDK",
     "Foxit.FoxitReader",
     "kukuruzka165.materialgram",
@@ -259,7 +238,7 @@ function Get-QuickLookPlugins {
     Nekta_Logging SUCCESS "Done." $LogFile
 }
 function Install-Office365 {
-    $officeToolUrl = "https://github.com/YerongAI/Office-Tool/releases/download/v10.21.35.0/Office_Tool_with_runtime_v10.21.35.0_x64.zip"
+    $officeToolUrl = "https://github.com/YerongAI/Office-Tool/releases/download/v10.24.68.0/Office_Tool_with_runtime_v10.24.68.0_x64.zip"
     $configurationUrl = "https://github.com/Dreamless2/Updates/releases/download/youpdates/Configuration.xml"
     $officeToolName = [System.IO.Path]::GetFileName($officeToolUrl)
     $officeToolPath = Join-Path $AppsDir $officeToolName    
