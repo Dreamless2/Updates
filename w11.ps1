@@ -9,9 +9,8 @@ $revoLic = "$AppsDir\revouninstallerpro5.lic"
 $NektaModule = "$env:TEMP\Nekta.psm1"
 
 New-Item -ItemType Directory -Path $AppsDir | Out-Null
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/IDM.reg" -Destination $AppsDir
-Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/revouninstallerpro5.lic" -Destination $AppsDir
+#Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/Settings.reg" -Destination $AppsDir
+#Start-BitsTransfer -Source "https://github.com/Dreamless2/Updates/releases/download/youpdates/DownloadManager.reg" -Destination $AppsDir
 
 if (-not (Test-Path -Path $NektaModule)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Nekta.psm1" -OutFile $NektaModule
@@ -471,7 +470,7 @@ Install-Office365
 Install-ShanaEncoder
 Install-BitTorrent
 Install-MKVExtractor
-Install-Python
+#Install-Python
 Set-BitTorrentFolders
 Set-IDMFolders
 Set-WinRARFolders
@@ -479,5 +478,5 @@ Set-TelegramFolders
 Set-KotatogramFolders
 Set-AuygramFolders
 Set-MaterialgramFolders
-Add-ExtrasPackages
+#Add-ExtrasPackages
 Remove-WindowsDefender
