@@ -40,6 +40,10 @@
 #       -Nekta_WipePrefetch                         -> Clear prefetch folder
 #       -Nekta_StartStopProcess                     -> Start and stop a process     
 #       -Nekta_ResolvePath                          -> Resolves a given path (Path or LiteralPath) and checks if it exists.
+#       -Nekta_ChangeLocation                       -> Change the current working directory
+#       -Nekta_GetLocation                          -> Get the current working directory
+#       -Nekta_CheckPath                            -> Check if a path exists
+#
 #     -Downloads
 #       -Nekta_ResolveUri                           -> Resolves a URI and retrieves information such as file size, last modified date, and filename.
 #       -Nekta_NovaDownloader                       -> Downloading a file with progress bar and some features
@@ -1779,6 +1783,158 @@ Function Nekta_ResolvePath {
     }
 }
 
+#==========================================================================
+
+# FUNCTION Nekta_ChangeLocation
+#==========================================================================
+Function Nekta_ChangeLocation {
+    <#
+        .SYNOPSIS
+        Changes the current working directory.
+        .DESCRIPTION
+        This function changes the working directory to the specified path (equivalent to Set-Location or cd).
+        .PARAMETER Path
+        The path of the directory to change to.
+        .EXAMPLE
+        Nekta_Set-Location -Path "C:\Temp\Projects"
+        Changes to the specified directory and logs the result.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("P", "Folder", "Dir")]
+        [Parameter(Mandatory = $true, Position = 0)]
+        [String]$Path
+    )
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+    process {
+        Nekta_Logging "INFO" "Attempting to change to directory: '$Path'" $LogFile
+        
+        if (Test-Path -Path $Path -PathType Container) {
+            try {
+                Set-Location -Path $Path -ErrorAction Stop
+                $newLocation = Get-Location | Select-Object -ExpandProperty Path
+                
+                Nekta_Logging "SUCCESS" "Directory changed successfully to: '$newLocation'" $LogFile
+                return $newLocation
+            }
+            catch {
+                Nekta_Logging "ERROR" "Failed to change directory: $($_.Exception.Message)" $LogFile
+                return $null
+            }
+        }
+        else {
+            Nekta_Logging "WARNING" "The directory '$Path' does not exist or is not a folder." $LogFile
+            return $null
+        }
+    }
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+
+#==========================================================================
+
+# FUNCTION Nekta_GetLocation
+#==========================================================================
+Function Nekta_GetLocation {
+    <#
+        .SYNOPSIS
+        Returns the current working directory.
+        .DESCRIPTION
+        This function gets and returns the full path of the current working directory (equivalent to Get-Location or pwd).
+        .EXAMPLE
+        Nekta_GetLocation
+        Returns: The current path, e.g., C:\Users\YourUser\Documents\Project
+    #>
+    [CmdletBinding()]
+    Param()
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+    process {
+        Nekta_Logging "INFO" "Getting current working directory..." $LogFile
+        
+        $currentPath = Get-Location | Select-Object -ExpandProperty Path
+        
+        if ($currentPath) {
+            Nekta_Logging "SUCCESS" "Current directory: '$currentPath'" $LogFile
+            return $currentPath
+        }
+        else {
+            Nekta_Logging "WARNING" "Unable to retrieve the current directory." $LogFile
+            return $null
+        }
+    }
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
+
+#==========================================================================
+
+# FUNCTION Nekta_CheckPath
+#==========================================================================
+Function Nekta_CheckPath {
+    <#
+        .SYNOPSIS
+        Tests whether a path exists.
+        .DESCRIPTION
+        This function checks if the specified path exists and returns a boolean result. 
+        It can test for files, directories, or any item type (equivalent to Test-Path).
+        .PARAMETER Path
+        The path to test for existence.
+        .PARAMETER PathType
+        Optional: Specifies the type of path to test (Leaf = file, Container = directory).
+        .EXAMPLE
+        Nekta_CheckPath -Path "C:\Scripts\MyFile.txt"
+        Returns: $true if the file exists, $false otherwise.
+    #>
+    [CmdletBinding()]
+    Param(
+        [Alias("P", "File", "Folder", "Dir")]
+        [Parameter(Mandatory = $true, Position = 0)]
+        [String]$Path,
+
+        [Parameter(Mandatory = $false)]
+        [ValidateSet("Leaf", "Container")]
+        [String]$PathType
+    )
+    begin {
+        [string]$FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+        Nekta_Logging "INFO" "START FUNCTION - $FunctionName" $LogFile
+    }
+    process {
+        Nekta_Logging "INFO" "Testing existence of path: '$Path'" $LogFile
+        
+        $params = @{
+            Path = $Path
+        }
+        
+        if ($PathType) {
+            $params.PathType = $PathType
+            Nekta_Logging "INFO" "Specific path type requested: $PathType" $LogFile
+        }
+        
+        $exists = Test-Path @params -ErrorAction SilentlyContinue
+        
+        if ($exists) {
+            Nekta_Logging "SUCCESS" "Path exists: '$Path'" $LogFile
+        }
+        else {
+            Nekta_Logging "WARNING" "Path does not exist: '$Path'" $LogFile
+        }
+        
+        return $exists
+    }
+    end {
+        Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
+    }
+}
 
 #==========================================================================
 #
