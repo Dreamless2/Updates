@@ -771,27 +771,16 @@ Function Nekta_RenameItem {
 #          WINDOWS \ INSTALLATIONS AND EXECUTABLES                        #
 #                                                                         #
 ###########################################################################
-
 Function Nekta_RunProcess {
-    <#
-        .SYNOPSIS
-        Execute a process
-        .DESCRIPTION
-        Execute a process
-        .PARAMETER FileName
-        This parameter contains the full path including the file name and file extension of the executable (for example C:\Temp\MyApp.exe).
-        .PARAMETER Arguments
-        This parameter contains the list of arguments to be executed together with the executable.
-        .EXAMPLE
-        Nekta_RunProcess -FileName "C:\Temp\MyApp.exe" -Arguments "-silent"
-        Executes the file 'MyApp.exe' with arguments '-silent'
-    #>
     [CmdletBinding()]
     Param( 
         [Alias("F")]
-        [Parameter(Mandatory = $true, Position = 0)][String]$FileName,
+        [Parameter(Mandatory = $true, Position = 0)]
+        [String]$FileName,
+
         [Alias("A")]
-        [Parameter(Mandatory = $false, Position = 1)][String]$Arguments
+        [Parameter(Mandatory = $false, Position = 1)]
+        [String[]]$Arguments    # ← Change from [String] to [String[]]
     )
 
     begin {
@@ -800,8 +789,8 @@ Function Nekta_RunProcess {
     }
  
     process {
-        if ([string]::IsNullOrEmpty($Arguments)) {
-            Nekta_Logging "INFO" "Execute process '$Filename' with no arguments" $LogFile
+        if ($null -eq $Arguments -or $Arguments.Count -eq 0) {
+            Nekta_Logging "INFO" "Execute process '$FileName' with no arguments" $LogFile
 
             if (-not (Test-Path $FileName)) {
                 Nekta_Logging "ERROR" "Executable not found: '$FileName'" $LogFile
@@ -811,22 +800,24 @@ Function Nekta_RunProcess {
             $Process = Start-Process -FilePath $FileName -Wait -NoNewWindow -PassThru
         }
         else {
-            Nekta_Logging "INFO" "Execute process '$Filename' with arguments '$Arguments'" $LogFile
+            Nekta_Logging "INFO" "Execute process '$FileName' with $($Arguments.Count) arguments" $LogFile
 
             if (-not (Test-Path $FileName)) {
                 Nekta_Logging "ERROR" "Executable not found: '$FileName'" $LogFile
                 Exit 1
             }
 
+            # ← This now works perfectly with array
             $Process = Start-Process -FilePath $FileName -ArgumentList $Arguments -Wait -NoNewWindow -PassThru
         }
                 
         $ProcessExitCode = $Process.ExitCode
         if ($ProcessExitCode -eq 0) {
-            Nekta_Logging "SUCCESS" "The process '$Filename' ended successfully" $LogFile
+            Nekta_Logging "SUCCESS" "The process '$FileName' ended successfully" $LogFile
         }
         else {
-            Nekta_Logging "ERROR" "An error occurred trying to execute the process '$Filename' (exit code: $ProcessExitCode)!" $LogFile
+            Nekta_Logging "ERROR" "An error occurred trying to execute the process '$FileName' (exit code: $ProcessExitCode)!" $LogFile
+            # Optionally capture stderr here in the future
             Exit 1
         }
     }
@@ -835,6 +826,7 @@ Function Nekta_RunProcess {
         Nekta_Logging "INFO" "END FUNCTION - $FunctionName" $LogFile
     }
 }
+
 #==========================================================================
 
 # FUNCTION Nekta_RunProcessNoWait
