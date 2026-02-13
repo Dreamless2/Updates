@@ -3,10 +3,10 @@
 <Settings>
   <inputparamBox />
   <prefixtextBox />
-  <extensiontextBox />
-  <filterparamBoxV> -vf "scale=-1:-1:flags=lanczos,shanapad=Auto,setsar=1/1"</filterparamBoxV>
-  <filterparamBoxA />
-  <encparamBox> -f mp4 -c:v h264_amf -c:a libfdk_aac -sn -global_quality:v 26 -ac 2 -b:a 128k -profile:v high -level:v auto -quality:v balanced</encparamBox>
+  <extensiontextBox>720p.Dub.mp4</extensiontextBox>
+  <filterparamBoxV> -vf "scale=1280:720:flags=lanczos,shanapad=Auto,setsar=1/1,shanasubtitle=1"</filterparamBoxV>
+  <filterparamBoxA> -af "aresample=48000:resampler=soxr"</filterparamBoxA>
+  <encparamBox> -f mp4 -c:v h264_amf -c:a libfdk_aac -global_quality:v 26 -b:a 128k -sn -map_metadata -1 -map_chapters -1 -ac 2 -profile:v high -level:v auto -quality:v balanced</encparamBox>
   <x264optsBox />
   <substyle>Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Default,,22,&amp;H00FFFFFF,&amp;H0000FFFF,&amp;H00000000,&amp;H80000000,-1,0,0,0,100,100,0,0,1,2.5,2.5,2,10,10,20,1</substyle>
