@@ -3,6 +3,8 @@ $presetsDir = "$env:HOMEDRIVE\ShanaEncoder\presets"
 $shanaSettings = "$env:HOMEDRIVE\ShanaEncoder\settings" 
 $LogDirFile = "$AppsDir\WPI.log"
 
+$NektaModule = "$env:TEMP\Nekta.psm1"
+
 # Limpa arquivos antigos
 Write-Host "Deleting old files..." -ForegroundColor Red
 Remove-Item -Path $AppsDir -Force -Recurse
@@ -10,8 +12,11 @@ Write-Host "Creating new directory..." -ForegroundColor Green
 New-Item -ItemType Directory -Path $AppsDir
 Write-Host "Directory created." -ForegroundColor Green
 
-# Importa o módulo
-Import-Module "$(Get-Location)\Acme.psm1"
+if (-not (Test-Path -Path $NektaModule)) {
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Dreamless2/Updates/refs/heads/main/Acme.psm1" -OutFile $NektaModule
+}
+
+Import-Module $NektaModule -Force
 
 #==========================================================================
 
