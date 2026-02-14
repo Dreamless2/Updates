@@ -3,7 +3,7 @@ $presetsDir = "$env:HOMEDRIVE\ShanaEncoder\presets"
 $shanaSettings = "$env:HOMEDRIVE\ShanaEncoder\settings" 
 $LogDirFile = "$AppsDir\WPI.log"
 
-$NektaModule = "$env:TEMP\Nekta.psm1"
+$NektaModule = "$env:TEMP\Acme.psm1"
 
 # Limpa arquivos antigos
 Write-Host "Deleting old files..." -ForegroundColor Red
