@@ -957,10 +957,17 @@ Function AE_WriteLog {
     begin {}
 
     process {
-        # Create new log file (overwrite existing one should it exist)
-        if (! (Test-Path $LogFile) ) {    
-            # Note: the 'New-Item' cmdlet also creates any missing (sub)directories as well (works from W7/W2K8R2 to W10/W2K16 and higher)
-            New-Item $LogFile -ItemType "file" -force | Out-Null
+        # Create directory if needed
+        if ($LogFile) {
+            $LogDir = Split-Path $LogFile
+            if (-not (Test-Path $LogDir)) {
+                New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+            }
+        }
+
+        # Create file if missing
+        if ($LogFile -and -not (Test-Path $LogFile)) {
+            New-Item $LogFile -ItemType File -Force | Out-Null
         }
 
         $DateTime = (Get-Date -format "dd-MM-yyyy HH:mm:ss")
@@ -978,26 +985,30 @@ Function AE_WriteLog {
             "TRACE" { $NormType = "TRACE" }
             "T" { $NormType = "TRACE" }
         }
-        
-        # Pad the InformationType to align with the longest type (e.g., WARNING)
-        $FormattedType = ($InformationType.ToUpper()).PadRight(7) # Adjust length to 8 (length of 'WARNING')
+
+        # Alinhamento
+        $FormattedType = $NormType.PadRight(7)
 
         if ($Text -eq "") {
-            Add-Content $LogFile -value ("") # Write an empty line
+            Out-File -FilePath $LogFile -Append -Encoding UTF8 -InputObject ""
         }
         else {
-            # Write formatted entry to log file
             $LogEntry = "$DateTime $FormattedType :....$Text"
-            Add-Content $LogFile -value $LogEntry
+            Out-File -FilePath $LogFile -Append -Encoding UTF8 -InputObject $LogEntry
         }
 
         # Console color output
         switch ($NormType) {
             "INFO" { Write-Host "$FormattedType :....$Text" -ForegroundColor Yellow }
+            "I" { Write-Host "$FormattedType :....$Text" -ForegroundColor Yellow }
             "ERROR" { Write-Host "$FormattedType :....$Text" -ForegroundColor Red }
+            "E" { Write-Host "$FormattedType :....$Text" -ForegroundColor Red }
             "SUCCESS" { Write-Host "$FormattedType :....$Text" -ForegroundColor Green }
+            "S" { Write-Host "$FormattedType :....$Text" -ForegroundColor Green }
             "WARNING" { Write-Host "$FormattedType :....$Text" -ForegroundColor Blue }
+            "W" { Write-Host "$FormattedType :....$Text" -ForegroundColor Blue }
             "TRACE" { Write-Host "$FormattedType :....$Text" }
+            "T" { Write-Host "$FormattedType :....$Text" }
         }
     }
 
@@ -2393,8 +2404,8 @@ function Write-ProgressHelper {
 
     $elapsed = (Get-Date) - $start
     $secPerItem = if ($count -gt 0) { $elapsed.TotalSeconds / $count } else { 0 }
-    $estTotal   = New-TimeSpan -Seconds ($secPerItem * $total)
-    $remaining  = $estTotal - $elapsed
+    $estTotal = New-TimeSpan -Seconds ($secPerItem * $total)
+    $remaining = $estTotal - $elapsed
 
     $status = "$count / $total | Elapsed: $($elapsed.ToString('hh\:mm\:ss')) | Rem: $($remaining.ToString('hh\:mm\:ss'))"
 
